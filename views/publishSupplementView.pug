@@ -1,0 +1,25 @@
+extends layout
+
+block content
+  .main.container
+    .row
+      .col.l12.m12.col-md-offset-3
+        h3.display-4.m-b-2= title
+    .row
+      .col.l12.md12.col-md-offset-3
+        div.col-m-12=message
+    .row
+      .col.l12.md12.col-md-offset-3
+        // register form
+        form(method='POST' action='publish')
+          div.form-group
+            label(for='owner') Supplement Owner:
+            input#owner.form-control(type='text', placeholder='first and last' name='owner')
+          div.form-group
+            label(for='university') University:
+            input#university.form-control(type='text', value=university name='university' readonly)
+          div.form-group
+            label(for='id') Supplement ID:
+            input#id.form-control(type='text', value=supId name='id' readonly)
+          
+          button.btn.btn-primary(type='submit') Publish

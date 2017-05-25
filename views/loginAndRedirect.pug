@@ -1,0 +1,23 @@
+extends layout
+
+block content
+  .main.container
+    .row
+      .col.l12.m12.col-md-offset-3
+        h3.display-4.m-b-2= title
+    .row
+      .col.l12.md12.col-md-offset-3
+        div.col-m-12=message
+    .row
+      .col.l12.md12.col-md-offset-3
+        // register form
+        form(method='POST' action='/login/loginAndRedirect')
+          div.form-group
+            label(for='name') UserName:
+            input#name.form-control(type='text', placeholder='first and last' name='name')
+          div.form-group
+            label(for='pw') Password:
+            input#pw.form-control(type='password' name='password')
+          div.form-group
+            input#supId.form-control(type='hidden', value=supId  name='supId')
+          button.btn.btn-primary(type='submit') Login

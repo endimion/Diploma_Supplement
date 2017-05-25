@@ -1,0 +1,39 @@
+extends layout
+
+
+block content
+  .main.container
+    .row
+      .col.l12.m12.col-md-offset-3
+        h3.display-4.m-b-2= title
+    .row
+      .col.l12.md12.col-md-offset-3
+        div.col-m-12=message
+    .row
+      .col.s12.m6
+        each val in supplements
+          .card
+            .card-content#textContent
+              span.card-title
+              p Owner:  #{val.Owner}
+              p University:#{val.University}
+              p ID: #{val.Id}
+            .card-content(id="svgContent"+val.Id style={display: 'none', background: 'white',width:'16em'})    
+                  
+            .card-action
+              #userType
+                if userType === 'Student'
+                  a.btn-floating.btn-large.waves-effect.waves-light.red(href="edit/"+val.Id) 
+                    i.material-icons edit
+                else 
+                  a.btn-floating.btn-large.waves-effect.waves-light.red.disabled(href="/edit") 
+                    i.material-icons edit
+                a.btn-floating.btn-large.waves-effect.waves-light.red(style={float:'right'} onclick='getAndDisplayOrHideQr("'+val.Id+'","svgContent' + val.Id + '")') 
+                  i.material-icons dashboard
+    .row
+      .col.l6.m6.col-md-offset-3
+        a.btn.btn-primary(href="/login") Back 
+
+
+  script
+    include ../scripts/qrScript.js

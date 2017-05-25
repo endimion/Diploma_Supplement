@@ -1,0 +1,33 @@
+{
+  "name": "Hello-test-3",
+  "version": "0.0.1",
+  "description": "A Node.js hello-world program using NodeSdk Apis",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "engines": {
+    "node": "*"
+  },
+  "keywords": [
+    "Blockchain Hello-World",
+    "Hello-Blockchain",
+    "Blockchain sample program",
+    "blockchain hello world"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/endimion/SDK-Demo.git"
+  },
+  "license": "Apache-2.0",
+  "dependencies": {
+    "body-parser": "^1.17.1",
+    "cookie-parser": "^1.4.3",
+    "express": "^4.15.2",
+    "express-session": "^1.15.3",
+    "hfc": "^0.6.5",
+    "pug": "^2.0.0-rc.1",
+    "qr-image": "^3.2.0",
+    "randomstring": "^1.1.5"
+  }
+}
