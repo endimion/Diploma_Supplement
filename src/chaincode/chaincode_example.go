@@ -19,7 +19,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"strconv"
 	"encoding/json"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 
@@ -89,12 +88,8 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface, function string
 	return nil, nil
 }
 
-// Transaction makes payment of X units from A to B
+
 func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
-	// if function == "delete" {
-	// 	// Deletes an entity from its state
-	// 	return t.delete(stub, args)
-	// }
 
 	if function == "publish"{
 		return t.publish(stub, args)
@@ -104,98 +99,9 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 		return t.addAuthorizedUser(stub, args)
 	}
 
-
-	var A, B string    // Entities
-	var Aval, Bval int // Asset holdings
-	var X int          // Transaction value
-	var err error
-
-	if len(args) != 3 {
-		return nil, errors.New("Incorrect number of arguments. Expecting 3")
-	}
-
-	A = args[0]
-	B = args[1]
-
-	// Get the state from the ledger
-	Avalbytes, err := stub.GetState(A)
-	if err != nil {
-		return nil, errors.New("Failed to get state")
-	}
-	if Avalbytes == nil {
-		return nil, errors.New("Entity not found")
-	}
-	Aval, _ = strconv.Atoi(string(Avalbytes))
-
-	Bvalbytes, err := stub.GetState(B)
-	if err != nil {
-		return nil, errors.New("Failed to get state")
-	}
-	if Bvalbytes == nil {
-		return nil, errors.New("Entity not found")
-	}
-	Bval, _ = strconv.Atoi(string(Bvalbytes))
-
-	// Perform the execution
-	X, err = strconv.Atoi(args[2])
-	Aval = Aval - X
-	Bval = Bval + X
-	fmt.Printf("Aval = %d, Bval = %d\n", Aval, Bval)
-
-	// Write the state back to the ledger
-	err = stub.PutState(A, []byte(strconv.Itoa(Aval)))
-	if err != nil {
-		return nil, err
-	}
-
-	// Write the state back to the ledger
-	// err = stub.PutState("Test", []byte("this is a test"))
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-
-	err = stub.PutState(B, []byte(strconv.Itoa(Bval)))
-	if err != nil {
-		return nil, err
-	}
-	//Event based
-	b, err := stub.GetState(EVENT_COUNTER)
-	if err != nil {
-		return nil, errors.New("Failed to get state")
-	}
-	noevts, _ := strconv.Atoi(string(b))
-
-	tosend := "Event Counter is " + string(b)
-
-	err = stub.PutState(EVENT_COUNTER, []byte(strconv.Itoa(noevts+1)))
-	if err != nil {
-		return nil, err
-	}
-
-	err = stub.SetEvent("evtsender", []byte(tosend))
-	if err != nil {
-		return nil, err
-	}
 	return nil, nil
 }
-//
-// // Deletes an entity from state
-// func (t *SimpleChaincode) delete(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
-// 	if len(args) != 1 {
-// 		return nil, errors.New("Incorrect number of arguments. Expecting 1")
-// 	}
-//
-// 	A := args[0]
-//
-// 	// Delete the key from the state in ledger
-// 	err := stub.DelState(A)
-// 	if err != nil {
-// 		return nil, errors.New("Failed to delete state")
-// 	}
-//
-// 	return nil, nil
-// }
+
 
 // Query callback representing the query of a chaincode
 func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
@@ -221,23 +127,6 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 	if len(args) != 1 {
 		return nil, errors.New("Incorrect number of arguments. Expecting name of the person to query")
 	}
-
-	// A = args[0]
-
-	// Get the state from the ledger
-	// Avalbytes, err := stub.GetState(A)
-	// if err != nil {
-	// 	jsonResp := "{\"Error\":\"Failed to get state for " + A + "\"}"
-	// 	return nil, errors.New(jsonResp)
-	// }
-	//
-	// if Avalbytes == nil {
-	// 	jsonResp := "{\"Error\":\"Nil amount for " + A + "\"}"
-	// 	return nil, errors.New(jsonResp)
-	// }
-	//
-	// jsonResp := "{\"Name\":\"" + A + "\",\"Amount\":\"" + string(Avalbytes) + "\"}"
-	// fmt.Printf("Query Response:%s\n", jsonResp)
 
 	attr, _ := stub.ReadCertAttribute("typeOfUser") //callerRole, err := stub.ReadCertAttribute("role")
 	attrString := string(attr)
@@ -375,11 +264,11 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 					return nil, err
 				}
 				return []byte(encodedResult), nil
-			}else{
-				return nil, errors.New("User not Authorized to see this supplement")
-			}
+				}else{
+					return nil, errors.New("User not Authorized to see this supplement")
+				}
 
-	}
+			}
 
 
 
@@ -434,6 +323,66 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 				// return nil, errors.New("Only University users  may perform this query not " + attrString)
 
 			}
+
+
+
+			// Puts a new DSMAp to the state
+			// args[0] the DSMAP  JSON string
+			// Only a user that has the attribute typeOfUser = Student can invoke this transaction with success
+			// and he has to be the owner of the supplment as that is identified by the DSId filed of the DSMAP struct
+			func (t *SimpleChaincode) addDSMap(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+				if len(args) != 1 {
+					return nil, errors.New("Incorrect number of arguments. Expecting 1")
+				}
+
+				//encode into a DSMap from strct the argument
+				dsmapString := args[0]
+				dsmap := DSMap{}
+				json.Unmarshal([]byte(dsmapString), &dsmap)
+
+				// Here the ABAC API is called to verify the attributes, only then will the new
+				// supplement be added
+				isUniversity, _ := stub.VerifyAttribute("typeOfUser", []byte("Student"))
+				suplementId := dsmap.DSId
+
+
+				assetBytes, err := stub.GetState("assets")
+				if err != nil {
+					jsonResp := "{\"Error\":\"Failed to get state for key \"assets\"}"
+					return nil, errors.New(jsonResp)
+				}
+				assets := Assets{}
+				json.Unmarshal([]byte(assetBytes), &assets)
+
+				supplement, position := findSupplementInSlice(assets.Supplements, suplementId)
+				if position == -1{
+					return nil, errors.New("No Supplement Found with the given ID")
+				}
+
+				//check if the supplement is issued by the user sending the transaction
+				isIssuedBySender, _ := stub.VerifyAttribute("eID", []byte(supplement.Owner))
+
+				if isUniversity && isIssuedBySender{
+					//apend the received DSMap to the assets
+					dsMapSlice := assets.DSMap
+					dsMapSlice = append(dsMapSlice,dsmap)
+					assets.DSMap = dsMapSlice
+
+					//update the state with the new assets
+					encodedAssets,err  := json.Marshal(assets)
+					if err != nil {
+						return nil, err
+					}
+					err = stub.PutState("assets", []byte(encodedAssets))
+					if err != nil {
+						return nil, err
+					}
+				}
+				return nil, nil
+
+
+			}
+
 
 
 

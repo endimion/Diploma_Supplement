@@ -53,10 +53,10 @@ let deployRequest = {
 
 
 
-// testDeploy();
+testDeploy();
 // testGetSupplements();
  // testPublishSupplement()
-testAddAuthorizedUser()
+// testAddAuthorizedUser()
 // testInvoke();
 //
 // testGetSupplementById();
