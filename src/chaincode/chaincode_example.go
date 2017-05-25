@@ -49,6 +49,10 @@ type UniversitiesAsset struct{
 	Universities []string
 }
 
+type DSMapsAsset struct{
+	DSMaps []DSMap
+}
+
 type DSMap struct {
 	DSHash string
 	DSId string
@@ -99,6 +103,10 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 		return t.addAuthorizedUser(stub, args)
 	}
 
+	if function == "addDSMap"{
+		return t.addDSMap(stub,args)
+	}
+
 	return nil, nil
 }
 
@@ -120,6 +128,11 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 	if function == "getSupplementById"{
 		return t.getSupplementById(stub,args)
 	}
+
+	if function == "getAllDSMaps" {
+		return t.getAllDSMaps(stub,args)
+	}
+
 
 	// var A string // Entities
 	// var err error
@@ -212,6 +225,25 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 
 		emps:= EmployersAsset{Employers:res.Employers}
 		encodedEmpl,_ := json.Marshal(emps)
+
+		return []byte(encodedEmpl), nil
+	}
+
+
+	/**
+	Get all the DSMaps of the blockchain
+	**/
+	func (t *SimpleChaincode) getAllDSMaps(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+		assetBytes, err := stub.GetState("assets")
+		if err != nil {
+			jsonResp := "{\"Error\":\"Failed to get state for key \"assets\"}"
+			return nil, errors.New(jsonResp)
+		}
+		res := Assets{}
+		json.Unmarshal([]byte(assetBytes), &res)
+
+		dsMaps:= DSMapsAsset{DSMaps:res.DSMap}
+		encodedEmpl,_ := json.Marshal(dsMaps)
 
 		return []byte(encodedEmpl), nil
 	}
