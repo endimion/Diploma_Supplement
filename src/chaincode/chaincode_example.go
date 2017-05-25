@@ -242,7 +242,7 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 		res := Assets{}
 		json.Unmarshal([]byte(assetBytes), &res)
 
-		dsMaps:= DSMapsAsset{DSMaps:res.DSMap}
+		dsMaps:= DSMapsAsset{DSMaps:res.DSMap} 
 		encodedEmpl,_ := json.Marshal(dsMaps)
 
 		return []byte(encodedEmpl), nil
