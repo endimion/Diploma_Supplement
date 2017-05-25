@@ -1,3 +1,19 @@
+
+**Diploma Supplement Service**
+
+
+This is a Hyperledger backed up service that allows the users to publish, and control who has access on their
+Diploma Supplements
+
+# This Service builds on top of the SDK-Demo project by IBM. For more information read below
+
+
+
+
+
+
+
+
 #How to use hfc with the IBM Bluemix Blockchain beta service
 
 The goal is to run [helloblockchain.js](https://github.com/ratnakar-asara/Node-Sample/blob/master/helloblockchain.js) sample program, which will deploy example02 chaincode and query/invoke it.
@@ -24,9 +40,9 @@ The goal is to run [helloblockchain.js](https://github.com/ratnakar-asara/Node-S
     ```
     WARNING: Once enrollment is successful you will see the crypto material under keyValStore-<network-id>
              Don't delete this material till your network is deleted or reset.
-	     If you lost this cryptography data you can't communicate with Bluemix CA server, thus enrollment fails	
+	     If you lost this cryptography data you can't communicate with Bluemix CA server, thus enrollment fails
     ```
-     
+
 1. From SDK-Demo folder run node program:
 	```
 	node helloblockchain.js
@@ -63,7 +79,7 @@ chaincode is kept under **src/chaincode** folder, which also contains **vendor**
   * npm ls hfc
   * npm list -g | grep hfc  #If installed using -g flag
 
-- if you get query failure error as below. 
+- if you get query failure error as below.
 
 ```
 
@@ -73,5 +89,3 @@ Failed to query chaincode, function: request={"chaincodeID":"9be0a0ed3f1788e8728
 
   increase deploy wait time
   ex: `chain.setDeployWaitTime(100);`
-
-
