@@ -1,11 +1,11 @@
 
-**Diploma Supplement Service**
+#Diploma Supplement Service
 
 
 This is a Hyperledger backed up service that allows the users to publish, and control who has access on their
 Diploma Supplements
 
-# This Service builds on top of the SDK-Demo project by IBM. For more information read below
+**This Service builds on top of the SDK-Demo project by IBM. For more information read below**
 
 
 
