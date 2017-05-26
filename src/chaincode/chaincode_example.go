@@ -49,11 +49,11 @@ type UniversitiesAsset struct{
 	Universities []string
 }
 
-type DSMapsAsset struct{
-	DSMaps []DSMap
+type DiplomaSupplementMapsAsset struct{
+	DiplomaSupplementMaps []DiplomaSupplementMap
 }
 
-type DSMap struct {
+type DiplomaSupplementMap struct {
 	DSHash string
 	DSId string
 	Recipient string
@@ -64,7 +64,7 @@ type Assets struct{
 	Supplements []DiplomaSupplement
 	Employers []string
 	Universities []string
-	DSMap []DSMap
+	DiplomaSupplementMap []DiplomaSupplementMap
 }
 
 var EVENT_COUNTER = "event_counter"
@@ -79,10 +79,10 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface, function string
 	// slice, that will hold the eIDs of the universities as strings
 	var universities = make([]string,0)
 	//slice that will hold the diplomasupplmet-hash-recipient map
-	var dsMaps = make([]DSMap,0)
+	var diplomaSupplementMaps = make([]DiplomaSupplementMap,0)
 
 
-	assets := Assets{Universities: universities, Employers:employers, Supplements:supplements, DSMap:dsMaps}
+	assets := Assets{Universities: universities, Employers:employers, Supplements:supplements, DiplomaSupplementMap:diplomaSupplementMaps}
 	encodedAssets,err  := json.Marshal(assets)
 	err = stub.PutState("assets", []byte(encodedAssets))
 	if err != nil {
@@ -103,8 +103,8 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 		return t.addAuthorizedUser(stub, args)
 	}
 
-	if function == "addDSMap"{
-		return t.addDSMap(stub,args)
+	if function == "addDiplomaSupplementMap"{
+		return t.addDiplomaSupplementMap(stub,args)
 	}
 
 	return nil, nil
@@ -129,8 +129,8 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 		return t.getSupplementById(stub,args)
 	}
 
-	if function == "getAllDSMaps" {
-		return t.getAllDSMaps(stub,args)
+	if function == "getAllDiplomaSupplementMaps" {
+		return t.getAllDiplomaSupplementMaps(stub,args)
 	}
 
 
@@ -231,9 +231,9 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 
 
 	/**
-	Get all the DSMaps of the blockchain
+	Get all the DiplomaSupplementMaps of the blockchain
 	**/
-	func (t *SimpleChaincode) getAllDSMaps(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+	func (t *SimpleChaincode) getAllDiplomaSupplementMaps(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 		assetBytes, err := stub.GetState("assets")
 		if err != nil {
 			jsonResp := "{\"Error\":\"Failed to get state for key \"assets\"}"
@@ -242,8 +242,8 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 		res := Assets{}
 		json.Unmarshal([]byte(assetBytes), &res)
 
-		dsMaps:= DSMapsAsset{DSMaps:res.DSMap} 
-		encodedEmpl,_ := json.Marshal(dsMaps)
+		diplomaSupplementMaps:= DiplomaSupplementMapsAsset{DiplomaSupplementMaps:res.DiplomaSupplementMap}
+		encodedEmpl,_ := json.Marshal(diplomaSupplementMaps)
 
 		return []byte(encodedEmpl), nil
 	}
@@ -362,14 +362,14 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 			// args[0] the DSMAP  JSON string
 			// Only a user that has the attribute typeOfUser = Student can invoke this transaction with success
 			// and he has to be the owner of the supplment as that is identified by the DSId filed of the DSMAP struct
-			func (t *SimpleChaincode) addDSMap(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+			func (t *SimpleChaincode) addDiplomaSupplementMap(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 				if len(args) != 1 {
 					return nil, errors.New("Incorrect number of arguments. Expecting 1")
 				}
 
-				//encode into a DSMap from strct the argument
+				//encode into a DiplomaSupplementMap from strct the argument
 				dsmapString := args[0]
-				dsmap := DSMap{}
+				dsmap := DiplomaSupplementMap{}
 				json.Unmarshal([]byte(dsmapString), &dsmap)
 
 				// Here the ABAC API is called to verify the attributes, only then will the new
@@ -395,10 +395,10 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 				isIssuedBySender, _ := stub.VerifyAttribute("eID", []byte(supplement.Owner))
 
 				if isUniversity && isIssuedBySender{
-					//apend the received DSMap to the assets
-					dsMapSlice := assets.DSMap
-					dsMapSlice = append(dsMapSlice,dsmap)
-					assets.DSMap = dsMapSlice
+					//apend the received DiplomaSupplementMap to the assets
+					diplomaSupplementMapSlice := assets.DiplomaSupplementMap
+					diplomaSupplementMapSlice = append(diplomaSupplementMapSlice,dsmap)
+					assets.DiplomaSupplementMap = diplomaSupplementMapSlice
 
 					//update the state with the new assets
 					encodedAssets,err  := json.Marshal(assets)

@@ -53,13 +53,18 @@ let deployRequest = {
 
 
 
-testDeploy();
+// testDeploy();
 // testGetSupplements();
  // testPublishSupplement()
 // testAddAuthorizedUser()
 // testInvoke();
 //
 // testGetSupplementById();
+
+// testAddDSMap();
+testGetDSMap();
+
+
 
 function testDeploy(){
   basic.enrollAndRegisterUsers(basic.config.newUserName,enrollAttr)
@@ -126,6 +131,40 @@ function testPublishSupplement(){
 }
 
 
+/**
+  Test the publish tx, that deploys a DiplomaSupplement to the blockchain
+**/
+function testAddDSMap(){
+  let _id =  "12345";//Math.floor((Math.random() * 1000) + 1);
+  let _args = ['{"DSHash": "hash1", "DSId":"12345","Recipient":null}' ];
+  let _enrollAttr = [{name:'typeOfUser',value:'Student'},{name:"eID",value:"studentEid"}];
+  let _invAttr = ['typeOfUser','eID'];
+  let req = {
+    // Name (hash) required for invoke
+    chaincodeID: basic.config.chaincodeID,
+    // Function to trigger
+    fcn: "addDSMap",
+    // Parameters for the invoke function
+    args: _args,
+    //pass explicit attributes to teh query
+    attrs: _invAttr
+  };
+  basic.enrollAndRegisterUsers("testStd",_enrollAttr)
+  .then(user => {
+    basic.invoke(user,req).then(res=> {console.log(res);
+      process.exit(0);
+    }).catch(err =>{
+      console.log(err);
+      process.exit(1);
+    });
+  }).catch(err =>{
+    console.log(err);
+  });
+}
+
+
+
+
 
 /*
 
@@ -174,6 +213,27 @@ function testGetSupplements(){
     process.exit(1);
   });
 }
+
+
+function testGetDSMap(){
+  let _args = ["ntua"];
+  let testQ2 = new ChainCodeQuery(attributes, _args, basic.config.chaincodeID,"getAllDSMaps",basic.query);
+  let testQfunc2 = testQ2.makeQuery.bind(testQ2);
+  basic.enrollAndRegisterUsers(basic.config.newUserName,enrollAttr)
+  .then(testQfunc2).then(res =>{
+    console.log("\nthe result is" + res);
+    process.exit(0);
+  })
+  .catch(err =>{
+    console.log("AN ERROR OCCURED!!!");
+    console.log(err);
+    if(err.toString().indexOf("Security handshake") > 0){
+      console.log("there was a handshake error");
+    }
+    process.exit(1);
+  });
+}
+
 
 
 function testGetSupplementById(){
