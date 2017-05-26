@@ -143,7 +143,7 @@ function testAddDSMap(){
     // Name (hash) required for invoke
     chaincodeID: basic.config.chaincodeID,
     // Function to trigger
-    fcn: "addDSMap",
+    fcn: "addDiplomaSupplementMap",
     // Parameters for the invoke function
     args: _args,
     //pass explicit attributes to teh query
@@ -217,7 +217,7 @@ function testGetSupplements(){
 
 function testGetDSMap(){
   let _args = ["ntua"];
-  let testQ2 = new ChainCodeQuery(attributes, _args, basic.config.chaincodeID,"getAllDSMaps",basic.query);
+  let testQ2 = new ChainCodeQuery(attributes, _args, basic.config.chaincodeID,"getAllDiplomaSupplementMaps",basic.query);
   let testQfunc2 = testQ2.makeQuery.bind(testQ2);
   basic.enrollAndRegisterUsers(basic.config.newUserName,enrollAttr)
   .then(testQfunc2).then(res =>{

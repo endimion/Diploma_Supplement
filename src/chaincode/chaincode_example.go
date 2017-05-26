@@ -107,6 +107,10 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 		return t.addDiplomaSupplementMap(stub,args)
 	}
 
+	if function == "addRecepientToDSMap"{
+		return t.addRecepientToDSMap(stub,args)
+	}
+
 	return nil, nil
 }
 
@@ -411,9 +415,61 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 					}
 				}
 				return nil, nil
-
-
 			}
+
+
+
+			/*
+					Adds the given recepientEid (args[1]) as the the Recepient of the DiplomaSupplementMap
+					which is identified by the give DSHash (args[0])
+			*/
+			func (t *SimpleChaincode) addRecepientToDSMap(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+				if len(args) != 2 {
+					return nil, errors.New("Incorrect number of arguments. Expecting 2")
+				}
+
+				//encode into a DiplomaSupplementMap from strct the argument
+				dsHash := args[0]
+				recepientEid := args[1]
+
+				//get the assets from the state
+				assetBytes, err := stub.GetState("assets")
+				if err != nil {
+					jsonResp := "{\"Error\":\"Failed to get state for key \"assets\"}"
+					return nil, errors.New(jsonResp)
+				}
+				assets := Assets{}
+				json.Unmarshal([]byte(assetBytes), &assets)
+
+
+				//find the DSMap in the state
+				dsMap, position := findDipSupMapInSlice(assets.DiplomaSupplementMap, dsHash)
+				if position == -1{
+					return nil, errors.New("No DiplomaSupplementMap Found with the given hash")
+				}
+
+				if (dsMap.Recipient != ""){
+					return nil, errors.New("No DiplomaSupplementMap is already finalized! Cannot add new Recipient!")
+				}
+
+				dsMap.Recipient = recepientEid
+				//remove old DSMap from the slice and add the updated version
+				dsMapSlice := removeDipSupMapFromSlice(assets.DiplomaSupplementMap,position)
+				dsMapSlice = append(dsMapSlice,dsMap)
+				//update the assets and put them in the state
+				assets.DiplomaSupplementMap = dsMapSlice
+				encodedAssets,err  := json.Marshal(assets)
+				if err != nil {
+					return nil, err
+				}
+				err = stub.PutState("assets", []byte(encodedAssets))
+				if err != nil {
+					return nil, err
+				}
+
+				return nil, nil
+			}
+
 
 
 
@@ -491,10 +547,38 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 			}
 
 
+			func findDipSupMapInSlice(s []DiplomaSupplementMap, dsHash string) (res DiplomaSupplementMap, pos int){
+				pos = -1
+				for index,element := range s {
+					// element is the element from someSlice for where we are
+					if element.DSHash == dsHash {
+						res = element
+						pos = index
+					}
+				}
+				return res, pos
+			}
+
+
+			/**
+					A DiplomaSupplement slice, s
+					The position of the supplement to remove, i
+			**/
 			func removeFromSlice(s []DiplomaSupplement, i int) []DiplomaSupplement {
 				s[len(s)-1], s[i] = s[i], s[len(s)-1]
 				return s[:len(s)-1]
 			}
+
+			/**
+					A DiplomaSupplementMap slice, s
+					The position of the dsMap to remove, i
+			**/
+			func removeDipSupMapFromSlice(s []DiplomaSupplementMap, i int) []DiplomaSupplementMap {
+				s[len(s)-1], s[i] = s[i], s[len(s)-1]
+				return s[:len(s)-1]
+			}
+
+
 
 
 
