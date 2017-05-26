@@ -62,8 +62,8 @@ let deployRequest = {
 // testGetSupplementById();
 
 // testAddDSMap();
-testGetDSMap();
-
+// testGetDSMap();
+testAddDSMapReceipient();
 
 
 function testDeploy(){
@@ -163,6 +163,36 @@ function testAddDSMap(){
 }
 
 
+/**
+  Test add a Recipient a DSHashMap
+**/
+function testAddDSMapReceipient(){
+  let _id =  "12345";//Math.floor((Math.random() * 1000) + 1);
+  let _args = ['hash1','recipientEid2'];
+  let _enrollAttr = [{name:'typeOfUser',value:'Student'},{name:"eID",value:"studentEid"}];
+  let _invAttr = ['typeOfUser','eID'];
+  let req = {
+    // Name (hash) required for invoke
+    chaincodeID: basic.config.chaincodeID,
+    // Function to trigger
+    fcn: "addRecepientToDSMap",
+    // Parameters for the invoke function
+    args: _args,
+    //pass explicit attributes to teh query
+    attrs: _invAttr
+  };
+  basic.enrollAndRegisterUsers("testStd",_enrollAttr)
+  .then(user => {
+    basic.invoke(user,req).then(res=> {console.log(res);
+      process.exit(0);
+    }).catch(err =>{
+      console.log(err);
+      process.exit(1);
+    });
+  }).catch(err =>{
+    console.log(err);
+  });
+}
 
 
 
