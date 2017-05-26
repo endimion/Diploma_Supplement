@@ -168,7 +168,7 @@ function testAddDSMap(){
 **/
 function testAddDSMapReceipient(){
   let _id =  "12345";//Math.floor((Math.random() * 1000) + 1);
-  let _args = ['hash1','recipientEid2'];
+  let _args = ['hash1','recipientEid3'];
   let _enrollAttr = [{name:'typeOfUser',value:'Student'},{name:"eID",value:"studentEid"}];
   let _invAttr = ['typeOfUser','eID'];
   let req = {
@@ -246,8 +246,8 @@ function testGetSupplements(){
 
 
 function testGetDSMap(){
-  let _args = ["ntua"];
-  let testQ2 = new ChainCodeQuery(attributes, _args, basic.config.chaincodeID,"getAllDiplomaSupplementMaps",basic.query);
+  let _args = ["hash1"];
+  let testQ2 = new ChainCodeQuery(attributes, _args, basic.config.chaincodeID,"getDiplomaSupplementMapsByHash",basic.query);
   let testQfunc2 = testQ2.makeQuery.bind(testQ2);
   basic.enrollAndRegisterUsers(basic.config.newUserName,enrollAttr)
   .then(testQfunc2).then(res =>{
