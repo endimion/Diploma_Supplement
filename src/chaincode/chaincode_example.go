@@ -401,8 +401,13 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 
 					assetBytes, err := stub.GetState("assets")
 					if err != nil {
-						jsonResp := "{\"Error\":\"Failed to get state for key \"assets\"}"
-						return nil, errors.New(jsonResp)
+						//transactions cannot return errors this way we have to use an event
+						// return nil, errors.New("No Supplement Found with the given ID")
+						tosend := "Error, Failed to get state for key \"assets\"" + suplementId + "." + stub.GetTxID()
+						err = stub.SetEvent("evtsender", []byte(tosend))
+						if err != nil {
+							return nil, err
+						}
 					}
 					assets := Assets{}
 					json.Unmarshal([]byte(assetBytes), &assets)
@@ -428,11 +433,19 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 						//update the state with the new assets
 						encodedAssets,err  := json.Marshal(assets)
 						if err != nil {
-							return nil, err
+							tosend := "Error, Marshaling Assets" + suplementId + "." + stub.GetTxID()
+							err = stub.SetEvent("evtsender", []byte(tosend))
+							if err != nil {
+								return nil, err
+							}
 						}
 						err = stub.PutState("assets", []byte(encodedAssets))
 						if err != nil {
-							return nil, err
+							tosend := "Error,putting assets back in state" + suplementId + "." + stub.GetTxID()
+							err = stub.SetEvent("evtsender", []byte(tosend))
+							if err != nil {
+								return nil, err
+							}
 						}
 						//Execution of chaincode finishe successfully
 						tosend := "Tx chaincode finished OK." + stub.GetTxID()

@@ -62,9 +62,9 @@ let deployRequest = {
 //
 // testGetSupplementById();
 
-// testAddDSMap();
+testAddDSMap();
 // testGetDSMap();
-testAddDSMapReceipient();
+// testAddDSMapReceipient();
 
 
 function testDeploy(){

@@ -4,8 +4,8 @@ const router = express.Router()
 const randomstring = require("randomstring");
 const basic = require('../basicFunctions');
 const chainCodeQuery = require('../ChaincodeQuery.js');
-
-
+const supUtils = require('../utils/SupplementUtils.js');
+const emailHelper = require('../utils/emailClient.js');
 
 router.get('/publish',(req,res) =>{
 
@@ -24,25 +24,28 @@ router.post('/publish',(req,res) =>{
   let university = req.body.university;
   let _id = req.body.id;
 
-  let _args = ['{"Owner":"'+ owner +'", "University":"'+university+'","Authorized":[],"Id":"'+_id+'"}' ];
+  let publishArgs = ['{"Owner":"'+ owner +'", "University":"'+university+'","Authorized":[],"Id":"'+_id+'"}' ];
   let _enrollAttr = [{name:'typeOfUser',value:'University'},{name:"eID",value:university.toString()}];
 
-  console.log(_enrollAttr);
+  // console.log(_enrollAttr);
+
+
 
   let _invAttr = ['typeOfUser','eID'];
 
-  let invReq = {
+  let publishReq = {
     // Name (hash) required for invoke
     chaincodeID: basic.config.chaincodeID,
     // Function to trigger
     fcn: "publish",
     // Parameters for the invoke function
-    args: _args,
+    args: publishArgs,
     //pass explicit attributes to teh query
     attrs: _invAttr
   };
 
-  let publishFnc = curryInvokeRequest(invReq,req,res);
+
+  let publishFnc = curryInvokeRequest(publishReq,req,res);
 
   /**
   closure to include a counter, to attempt to publish for a max of 10 times;
@@ -242,9 +245,65 @@ router.get('/view/:supId',(req,res) =>{
 
 
 
+router.get('/share',(req,res) =>{
+  let employerEmail = req.body.email;
+  let supId = req.body.supId?req.body.supId:"12345";
+  let userName = req.session.eID?req.session.eID:"studentEid";
+  let dsNonceHash = supUtils.generateSupplementHash(employerEmail, supId, userName);
+  let _enrollAttr = [{name:'typeOfUser',value:'Student'},{name:"eID",value:"studentEid"}];
+  let _invAttr = ['typeOfUser','eID'];
+
+  let addDSMapArgs = ['{"DSHash": "'+dsNonceHash+'", "DSId":"'+supId+'","Recipient":null}' ];
+
+  let addDSMapReq = {
+    // Name (hash) required for invoke
+    chaincodeID: basic.config.chaincodeID,
+    // Function to trigger
+    fcn: "addDiplomaSupplementMap",
+    // Parameters for the invoke function
+    args: addDSMapArgs,
+    //pass explicit attributes to teh query
+    attrs: _invAttr
+  };
+
+
+  let addDSFnc = curryInvokeRequest(addDSMapReq,req,res);
+  /**
+  closure to include a counter, to attempt to invoke for a max of 10times
+  **/
+  let tryToAddDS = (function(){
+    let counter = 0;
+    return function(){
+      basic.enrollAndRegisterUsers(userName,_enrollAttr)
+      .then(addDSFnc)
+      .then( rsp => {
+        counter = 10;
+        emailHelper.sendEmail("triantafyllou.ni@gmail.com","this is a test "
+                                + dsNonceHash); //this returns a promise
+        res.send(rsp);
+      })
+      .catch(err =>{
+        // console.log("counter" + counter);
+        if(counter < 10){
+          console.log("AN ERROR OCCURED!!! atempt:"+counter+"\n");
+          console.log(err);
+          counter ++;
+          tryToAddDS();
+        }else{
+          res.send("failed, to get  supplements after " + counter + " attempts");
+        }
+      });
+
+    }
+  })();
+  tryToAddDS();
+
+
+  // res.send("nonce is " + dsNonceHash);
 
 
 
+});
 
 
 
