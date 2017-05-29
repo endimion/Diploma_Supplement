@@ -252,10 +252,14 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 		json.Unmarshal([]byte(assetBytes), &res)
 
 		diplomaSupplementMaps:=res.DiplomaSupplementMap
-		result := diplomaSupplementMaps[dsHash]
-		encodedRes,_ := json.Marshal(result)
+		result,ok := diplomaSupplementMaps[dsHash]
+		if ok {
+			encodedRes,_ := json.Marshal(result)
+			return []byte(encodedRes), nil
+		}else{
+			return nil, errors.New("Could not find the requested ds has")
+		}
 
-		return []byte(encodedRes), nil
 	}
 
 

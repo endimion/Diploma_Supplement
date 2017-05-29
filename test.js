@@ -1,3 +1,4 @@
+/*jslint es6 */
 'use strict';
 
 let basic  = require('./basicFunctions.js');
@@ -53,7 +54,7 @@ let deployRequest = {
 
 
 
-// testDeploy();
+testDeploy();
 // testGetSupplements();
  // testPublishSupplement()
 // testAddAuthorizedUser()
@@ -63,12 +64,12 @@ let deployRequest = {
 
 // testAddDSMap();
 // testGetDSMap();
-testAddDSMapReceipient();
+// testAddDSMapReceipient();
 
 
 function testDeploy(){
   basic.enrollAndRegisterUsers(basic.config.newUserName,enrollAttr)
-  .then(user => {
+  .then( user => {
     basic.deploy(user,deployRequest).then(res=> {console.log(res);
       process.exit(0);
     }).catch(err =>{
