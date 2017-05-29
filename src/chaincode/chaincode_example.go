@@ -448,10 +448,10 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 
 				//find the DSMap in the state
 				dsMap,ok:= assets.DiplomaSupplementMap[dsHash]
-				if !ok{
+				if !ok {
 					return nil, errors.New("No DiplomaSupplementMap Found with the given hash")
 					}else{
-						if (dsMap.Recipient != ""){
+						if dsMap.Recipient != "" {
 							return nil, errors.New("No DiplomaSupplementMap is already finalized! Cannot add new Recipient!")
 							}else{
 								dsMap.Recipient = recepientEid

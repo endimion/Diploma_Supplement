@@ -168,7 +168,7 @@ function testAddDSMap(){
 **/
 function testAddDSMapReceipient(){
   let _id =  "12345";//Math.floor((Math.random() * 1000) + 1);
-  let _args = ['hash1','recipientEid3'];
+  let _args = ['hash2','recipientEid'];
   let _enrollAttr = [{name:'typeOfUser',value:'Student'},{name:"eID",value:"studentEid"}];
   let _invAttr = ['typeOfUser','eID'];
   let req = {
