@@ -153,7 +153,7 @@ function testAddDSMap(){
   basic.enrollAndRegisterUsers("testStd",_enrollAttr)
   .then(user => {
     basic.invoke(user,req).then(res=> {console.log(res);
-      process.exit(0);
+      // process.exit(0);
     }).catch(err =>{
       console.log(err);
       process.exit(1);
@@ -185,7 +185,7 @@ function testAddDSMapReceipient(){
   basic.enrollAndRegisterUsers("testStd",_enrollAttr)
   .then(user => {
     basic.invoke(user,req).then(res=> {console.log(res);
-      process.exit(0);
+      // process.exit(0);
     }).catch(err =>{
       console.log(err);
       process.exit(1);

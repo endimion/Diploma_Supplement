@@ -267,33 +267,58 @@ function deployChaincodeWithParams(userObj,deployReq) {
 // };
 **/
 function invokeWithParams(userObj,invReq) {
-  return new Promise(function(resolve,reject){
-    var eh = networkConfig.chain.getEventHub();
-    // Trigger the invoke transaction
-    var invokeTx = userObj.invoke(invReq);
-    // Print the invoke results
-    invokeTx.on('submitted', function(results) {
-      // Invoke transaction submitted successfully
-      console.log(util.format("\nSuccessfully submitted chaincode invoke transaction: request=%j, response=%j", invReq, results));
-    });
-    invokeTx.on('complete', function(results) {
-      // Invoke transaction completed successfully
-      console.log(util.format("\nSuccessfully completed chaincode invoke transaction: request=%j, response=%j", invReq, results));
-      resolve(results);
-    });
-    invokeTx.on('error', function(err) {
-      // Invoke transaction submission failed
-      console.log(util.format("\nFailed to submit chaincode invoke transaction: request=%j, error=%j", invReq, err));
-      reject(err);
-      // process.exit(1);
+
+    var txHash="qwe";
+
+    return new Promise(function(resolve,reject){
+      var eh = networkConfig.chain.getEventHub();
+      // Trigger the invoke transaction
+      var invokeTx = userObj.invoke(invReq);
+      // Print the invoke results
+      invokeTx.on('submitted', function(results) {
+        // Invoke transaction submitted successfully
+        console.log(util.format("\nSuccessfully submitted chaincode invoke transaction: request=%j, response=%j", invReq, results));
+        txHash = results.uuid;
+
+      });
+      invokeTx.on('complete', function(results) {
+        // Invoke transaction completed successfully
+        console.log(util.format("\nSuccessfully completed chaincode invoke transaction: request=%j, response=%j", invReq, results));
+        // resolve(results);
+        // txHash = results.uuid;
+
+      });
+      invokeTx.on('error', function(err) {
+        // Invoke transaction submission failed
+        console.log(util.format("\nFailed to submit chaincode invoke transaction: request=%j, error=%j", invReq, err));
+        reject(err);
+      });
+
+      //Listen to custom events
+      var regid = eh.registerChaincodeEvent(invReq.chaincodeID, "evtsender", function(event) {
+        console.log(util.format("Custom event received, payload: %j\n", event.payload.toString()));
+
+        if(event.payload.toString().indexOf("Error") >= 0){
+          let uuid = event.payload.toString().split(".")[1];
+          eh.unregisterChaincodeEvent(regid);
+          if(uuid === txHash){ //resolve promise only when the current transaction has finished
+            eh.unregisterChaincodeEvent(regid);
+            reject(event.payload.toString());
+          }
+        }
+        if(event.payload.toString().indexOf("Tx chaincode finished OK") >= 0){
+            let uuid = event.payload.toString().split(".")[1];
+            console.log("\nUUID " + uuid);
+            console.log("\ntxHash " + txHash);
+            if(uuid === txHash){ //resolve promise only when the current transaction has finished
+              eh.unregisterChaincodeEvent(regid);
+              resolve(event.payload.toString());
+            }
+        }
+      });
     });
 
-    //Listen to custom events
-    var regid = eh.registerChaincodeEvent(invReq.chaincodeID, "evtsender", function(event) {
-      console.log(util.format("Custom event received, payload: %j\n", event.payload.toString()));
-      eh.unregisterChaincodeEvent(regid);
-    });
-  });
+
 }
 
 
@@ -320,7 +345,7 @@ function queryByReqAndAttributes(userObj,request,attr) {
       });
     }catch(err){
       console.log("Error caught during query");
-    reject(err);
+      reject(err);
     }
 
   });
