@@ -29,13 +29,15 @@ app.use(session({
   saveUninitialized: true,
   cookie: { secure: false }
 })); //set up middleware for session handling
+
 app.use(timeout(120000));
-app.use(haltOnTimedout);
+
 app.use('/',viewRouters);
 app.use('/login',loginRoutes);
 app.use('/supplement',supplementRoutes);
 app.use('/qr',qr);
 
+app.use(haltOnTimedout);//the following timeout middleware has to be the last middleware
 
 
 //start the server

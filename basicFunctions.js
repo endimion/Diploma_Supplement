@@ -299,7 +299,7 @@ function invokeWithParams(userObj,invReq) {
       var regid = eh.registerChaincodeEvent(invReq.chaincodeID, "evtsender", function(event) {
         console.log(util.format("Custom event received, payload: %j\n", event.payload.toString()));
 
-        if(event.payload && event.payload.toString().indexOf("Error") >= 0){
+        if(event.payload.toString() && event.payload.toString().indexOf("Error") >= 0){
           let uuid = event.payload.toString().split(".")[1];
           eh.unregisterChaincodeEvent(regid);
           if(uuid === txHash){ //resolve promise only when the current transaction has finished
@@ -307,7 +307,7 @@ function invokeWithParams(userObj,invReq) {
             reject(event.payload.toString());
           }
         }
-        if(event.payload && event.payload.toString().indexOf("Tx chaincode finished OK") >= 0){
+        if(event.payload.toString()&& event.payload.toString().indexOf("Tx chaincode finished OK") >= 0){
             let uuid = event.payload.toString().split(".")[1];
             console.log("\nUUID " + uuid);
             console.log("\ntxHash " + txHash);
@@ -316,6 +316,7 @@ function invokeWithParams(userObj,invReq) {
               resolve(event.payload.toString());
             }
         }
+
       });
     });
 
