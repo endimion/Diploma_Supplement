@@ -54,7 +54,7 @@ let deployRequest = {
 
 
 
-// testDeploy();
+testDeploy();
 // testGetSupplements();
  // testPublishSupplement()
 // testAddAuthorizedUser()
@@ -62,9 +62,10 @@ let deployRequest = {
 //
 // testGetSupplementById();
 
-testAddDSMap();
+// testAddDSMap();
 // testGetDSMap();
 // testAddDSMapReceipient();
+// testGenCodeForDSMap();
 
 
 function testDeploy(){
@@ -137,7 +138,7 @@ function testPublishSupplement(){
 **/
 function testAddDSMap(){
   let _id =  "12345";//Math.floor((Math.random() * 1000) + 1);
-  let _args = ['{"DSHash": "hash1", "DSId":"12345","Recipient":null}' ];
+  let _args = ['{"DSHash": "hash1", "DSId":"12345","Email":"me@me.gr","Recipient":null}' ];
   let _enrollAttr = [{name:'typeOfUser',value:'Student'},{name:"eID",value:"studentEid"}];
   let _invAttr = ['typeOfUser','eID'];
   let req = {
@@ -169,7 +170,7 @@ function testAddDSMap(){
 **/
 function testAddDSMapReceipient(){
   let _id =  "12345";//Math.floor((Math.random() * 1000) + 1);
-  let _args = ['hash1','recipientEid'];
+  let _args = ['hash1','recipientEid','5A989A9D6B'];
   let _enrollAttr = [{name:'typeOfUser',value:'Student'},{name:"eID",value:"studentEid"}];
   let _invAttr = ['typeOfUser','eID'];
   let req = {
@@ -194,6 +195,37 @@ function testAddDSMapReceipient(){
     console.log(err);
   });
 }
+
+
+
+function testGenCodeForDSMap(){
+  let _id =  "12345";//Math.floor((Math.random() * 1000) + 1);
+  let _args = ['hash1'];
+  let _enrollAttr = [{name:'typeOfUser',value:'Student'},{name:"eID",value:"studentEid"}];
+  let _invAttr = ['typeOfUser','eID'];
+  let req = {
+    // Name (hash) required for invoke
+    chaincodeID: basic.config.chaincodeID,
+    // Function to trigger
+    fcn: "genCodeForDSMap",
+    // Parameters for the invoke function
+    args: _args,
+    //pass explicit attributes to teh query
+    attrs: _invAttr
+  };
+  basic.enrollAndRegisterUsers("testStd",_enrollAttr)
+  .then(user => {
+    basic.invoke(user,req).then(res=> {console.log(res);
+      // process.exit(0);
+    }).catch(err =>{
+      console.log(err);
+      process.exit(1);
+    });
+  }).catch(err =>{
+    console.log(err);
+  });
+}
+
 
 
 

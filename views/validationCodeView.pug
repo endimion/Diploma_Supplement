@@ -1,0 +1,20 @@
+extends layout
+
+block content
+  .main.container
+    .row
+      .col.l12.m12.col-md-offset-3
+        h3.display-4.m-b-2= title
+    .row
+      .col.l12.md12.col-md-offset-3
+        div.col-m-12=message
+    .row
+      .col.l12.md12.col-md-offset-3
+        // register form
+        form(method='POST' action='/supplement/view/auth/'+dsHash)
+          div.form-group
+            label(for='code') Validation Code:
+            input#code.form-control(type='text' name='code')
+          div.form-group
+            input#dsHash.form-control(type='hidden' name='dsHash' value = dsHash)    
+          button.btn.btn-primary(type='submit') Submit

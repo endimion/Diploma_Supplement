@@ -21,15 +21,52 @@ block content
             .card-content(id="svgContent"+val.Id style={display: 'none', background: 'white',width:'16em'})    
                   
             .card-action
-              #userType
+              div.row.card-content
                 if userType === 'Student'
-                  a.btn-floating.btn-large.waves-effect.waves-light.red(href="edit/"+val.Id) 
-                    i.material-icons edit
+                  div.col.s12.m6#userType(style="position: relative; ")
+                    a.btn-floating.btn-large.waves-effect.waves-light.red(href="edit/"+val.Id) 
+                      i.material-icons edit
+                  div.col.s12.m12(style="position: relative; ")
+                    <div class="fixed-action-btn horizontal click-to-toggle" style="position: absolute; right: 24px;bottom:0;">
+                      <a class="btn-floating btn-large red">
+                        <i class="material-icons">share</i>
+                      </a>
+                      <ul>
+                        //- <li><a class="btn-floating red" style="transform: scaleY(0.4) scaleX(0.4) translateY(0px) translateX(40px); opacity: 0;"><i class="material-icons">insert_chart</i></a></li>
+                        <li>
+                          a.btn-floating.yellow.darken-1.modal-trigger(href='#modal' + val.Id, style="transform: scaleY(0.4) scaleX(0.4) translateY(0px) translateX(40px); opacity: 0;")
+                            <i class="material-icons">mail</i>
+                        </li>
+                        //- <li><a class="btn-floating green" style="transform: scaleY(0.4) scaleX(0.4) translateY(0px) translateX(40px); opacity: 0;"><i class="material-icons">publish</i></a></li>
+                        <li><a href="#modal"+{val.Id} class="btn-floating blue" style="transform: scaleY(0.4) scaleX(0.4) translateY(0px) translateX(40px); opacity: 0;"><i class="material-icons">dashboard</i></a></li>
+                      </ul>
+                    </div>
+                  <!-- Modal Structure -->
+                   div.modal(id="modal"+val.Id)
+                    <div class="modal-content">
+                      <h4>Share the DiplomaSupplement #{val.Id}</h4>
+                      <p>Send a sharable link via email</p>
+                      form.sendEmail(action='#')
+                        div.form-group
+                          label(for='email') Recipient Email:
+                          input.form-control(id='email'+val.Id, type='email', placeholder='name@email.com' name='email')
+                        div.form-group
+                          input.form-control(id='supId'+val.Id,type='hidden',  name='supId', value=val.Id)
+                        a.waves-effect.waves-green.btn-flat(onclick='sendEmail("email'+val.Id+'",'+'"supId'+val.Id+'","'+val.Id+'")') Send  
+                      include preloader  
+                  </div>
+
+   
                 else 
                   a.btn-floating.btn-large.waves-effect.waves-light.red.disabled(href="/edit") 
                     i.material-icons edit
-                a.btn-floating.btn-large.waves-effect.waves-light.red(style={float:'right'} onclick='getAndDisplayOrHideQr("'+val.Id+'","svgContent' + val.Id + '")') 
-                  i.material-icons dashboard
+                
+              
+                
+                    
+
+                //- a.btn-floating.btn-large.waves-effect.waves-light.red(style={float:'right'} onclick='getAndDisplayOrHideQr("'+val.Id+'","svgContent' + val.Id + '")') 
+                //-   i.material-icons dashboard
     .row
       .col.l6.m6.col-md-offset-3
         a.btn.btn-primary(href="/login") Back 
@@ -37,3 +74,9 @@ block content
 
   script
     include ../scripts/qrScript.js
+  script
+    include ../scripts/emailScript.js
+  script.
+    $(document).ready(function(){
+        $('.modal').modal();
+    });

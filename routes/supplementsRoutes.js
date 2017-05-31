@@ -6,6 +6,7 @@ const basic = require('../basicFunctions');
 const chainCodeQuery = require('../ChaincodeQuery.js');
 const supUtils = require('../utils/SupplementUtils.js');
 const emailHelper = require('../utils/emailClient.js');
+const srvUtils = require('../utils/serverUtils.js');
 
 router.get('/publish',(req,res) =>{
 
@@ -90,18 +91,6 @@ router.get('/view',(req,res) =>{
   let testQ2 = new chainCodeQuery(queryAttributes, queryArgs, basic.config.chaincodeID,"getSupplements",basic.query);
   let testQfunc2 = testQ2.makeQuery.bind(testQ2);
 
-
-  // basic.enrollAndRegisterUsers(userName,enrollAttr)
-  // .then(testQfunc2).then(response =>{
-  //   console.log("\nthe result is" + response);
-  //   res.send(JSON.parse(response));
-  //   // process.exit(0);
-  // })
-  // .catch(err =>{
-  //   console.log("AN ERROR OCCURED!!!\n");
-  //   console.log(err);
-  //
-  // });
   /**
   closure to add atempts to re-try in case of exceptions
   **/
@@ -194,23 +183,178 @@ router.get('/edit/:supId',(req,res) =>{
 
 
 
-
-router.get('/view/:supId',(req,res) =>{
+router.get('/view/:dsHash',(req,res) =>{
   let userName = req.session.eID;
-  let supId = req.params.supId;
+  let dsHash = req.params.dsHash;
 
   if(userName){
-    let _args = [supId];
     let _enrollAttr = [{name:'typeOfUser',value:req.session.userType},{name:"eID",value:req.session.eID}];
-    let _qAttr = ['typeOfUser','eID'];
-    let getSupsById = new chainCodeQuery(_qAttr, _args, basic.config.chaincodeID,"getSupplementById",basic.query);
-    let getSupsByIdBound = getSupsById.makeQuery.bind(getSupsById);
 
-    let tryToGetSupplement = (function(){
+    let tryGenerateCode = function(user){
+        let _args = [dsHash];
+        let _invAttr = ['typeOfUser','eID'];
+        let invReq = {
+          chaincodeID: basic.config.chaincodeID,
+          fcn: "genCodeForDSMap",
+          args: _args,
+          attrs: _invAttr
+        };
+        return new Promise(function(resolve,reject){
+          basic.invoke(user,invReq)
+          .then(response => {
+            console.log(response);
+            resolve(user)
+          })
+          .catch(err => {
+              console.log(err);
+               reject(err);
+            })
+        });
+      };
+
+    let tryToGetDSHash = (function(){
+      // let counter = 0;
+      let _qAttr = ['typeOfUser','eID'];
+      let dsHashargs = [dsHash];
+      let getHashQ = new chainCodeQuery(_qAttr, dsHashargs, basic.config.chaincodeID,"getDiplomaSupplementMapsByHash",basic.query);
+      let getHashBound = getHashQ.makeQuery.bind(getHashQ);
+      return function(user){
+        return new Promise(function(resolve,reject){
+          getHashBound(user)
+          .then(response => {
+            let dsHash = JSON.parse(response);
+            resolve({"user":user,"supId": dsHash.DSId, "email":dsHash.Email, "code":dsHash.Code });
+          })
+          .catch(err => reject(err));
+        });
+      }
+    })();
+
+  let tryToEmailCode = function(data){
+    let emailBody = "<p> Your validation code is " + data.code + "</p>";
+    return emailHelper.sendEmail(data.email,emailBody);
+  }
+
+
+    let tryToGenerateAndEmailCode = (function(){
       let counter = 0;
       return function(){
         basic.enrollAndRegisterUsers(userName,_enrollAttr)
-        .then(getSupsByIdBound)
+        .then(tryGenerateCode)
+        .then(tryToGetDSHash)
+        .then(tryToEmailCode)
+        .then(response =>{
+          console.log("\nthe result is" + response);
+          counter = 10;
+          res.render('validationCodeView',
+                      { title: 'Enter Validation Code',
+                        message: ' <p> Welcome user: ' + req.session.eID  + '</p>'
+                                 +'<p> Please enter below the validation code you received via email </p>'   ,
+                        userType: req.session.userType,
+                        dsHash: dsHash});
+        })
+        .catch(err =>{
+          console.log("AN ERROR OCCURED!!! atempt:"+counter+"\n");
+          console.log(err);
+          if(err.msg.indexOf("User not Authorized") >=0){
+            counter = 10;
+          }
+          if(counter < 10){
+            counter ++;
+            tryToGenerateAndEmailCode();
+          }else{
+            res.send("failed, to get  supplement after " + counter + " attempts");
+          }
+        });
+      }
+    })();
+    tryToGenerateAndEmailCode();
+  }else{
+    res.render('loginAndRedirect',{ title: 'Login',
+                                    message: 'Login to View Supplement',
+                                    supId: dsHash});
+  }
+});
+
+
+
+router.post('/view/auth/:dsHash',(req,res) =>{
+  let userName = req.session.eID;
+  let dsHash = req.params.dsHash;
+  let code = req.params.code;
+
+  if(userName){
+    let _enrollAttr = [{name:'typeOfUser',value:req.session.userType},{name:"eID",value:req.session.eID}];
+
+    let tryToGetDSHash =  function(user){
+        let _qAttr = ['typeOfUser','eID'];
+        let dsHashargs = [dsHash];
+        let getHashQ = new chainCodeQuery(_qAttr, dsHashargs, basic.config.chaincodeID,"getDiplomaSupplementMapsByHash",basic.query);
+        let getHashBound = getHashQ.makeQuery.bind(getHashQ);
+        return new Promise(function(resolve,reject){
+          getHashBound(user)
+          .then(response => {
+            let dsHash = JSON.parse(response);
+            resolve({"user":user,"supId": dsHash.DSId, "email":dsHash.Email });
+          })
+          .catch(err => reject(err));
+        });
+      };
+
+    let tryToUpdateDSMapReceipient = function(data){
+        let user = data.user;
+        let _args = [dsHash,userName,code];
+        let _invAttr = ['typeOfUser','eID'];
+        let invReq = {
+          chaincodeID: basic.config.chaincodeID,
+          fcn: "addRecepientToDSMap",
+          args: _args,
+          attrs: _invAttr
+        };
+        return new Promise(function(resolve,reject){
+          basic.invoke(user,invReq)
+          .then(response => {
+            console.log(response);
+            resolve(data)
+          })
+          .catch(err => {
+              console.log(err);
+               resolve(data);
+            })
+
+        });
+      };
+
+
+
+    let tryToGetSup = function(data){
+
+        let user = data.user;
+        let email = [data.email];
+        let _args = [data.supId];
+        let _qAttr = ['typeOfUser','eID'];
+        console.log("Query:   args " + data.supId + " email " + email);
+        console.log({name:'typeOfUser',value:req.session.userType},{name:"eID",value:req.session.eID});
+
+        let testQ2 = new chainCodeQuery(_qAttr, _args, basic.config.chaincodeID,"getSupplementById",basic.query);
+        let testQfunc2 = testQ2.makeQuery.bind(testQ2);
+        return new Promise(function(resolve,reject){
+          testQfunc2(user)
+          .then(response => {
+            resolve(response);
+          })
+          .catch(err => reject(err));
+        });
+      };
+
+
+    let tryToGetDSMapAndSup = (function(){
+      let counter = 0;
+      return function(){
+        basic.enrollAndRegisterUsers(userName,_enrollAttr)
+        .then(tryToGetDSHash)
+        .then(tryToUpdateDSMapReceipient)
+        .then(tryToGetSup)
         .then(response =>{
           console.log("\nthe result is" + response);
           counter = 10;
@@ -222,20 +366,23 @@ router.get('/view/:supId',(req,res) =>{
         .catch(err =>{
           console.log("AN ERROR OCCURED!!! atempt:"+counter+"\n");
           console.log(err);
+          if(err.msg.indexOf("User not Authorized") >=0){
+            counter = 10;
+          }
           if(counter < 10){
             counter ++;
-            tryToGetSupplement();
+            tryToGetDSMapAndSup();
           }else{
             res.send("failed, to get  supplement after " + counter + " attempts");
           }
         });
       }
     })();
-    tryToGetSupplement();
+    tryToGetDSMapAndSup();
   }else{
     res.render('loginAndRedirect',{ title: 'Login',
                                     message: 'Login to View Supplement',
-                                    supId: supId});
+                                    supId: dsHash});
   }
 });
 
@@ -245,15 +392,18 @@ router.get('/view/:supId',(req,res) =>{
 
 
 
-router.get('/share',(req,res) =>{
+router.post('/share',(req,res) =>{
   let employerEmail = req.body.email;
   let supId = req.body.supId?req.body.supId:"12345";
   let userName = req.session.eID?req.session.eID:"studentEid";
   let dsNonceHash = supUtils.generateSupplementHash(employerEmail, supId, userName);
-  let _enrollAttr = [{name:'typeOfUser',value:'Student'},{name:"eID",value:"studentEid"}];
+  let _enrollAttr = [{name:'typeOfUser',value:req.session.userType},{name:"eID",value:"studentEid"}];
   let _invAttr = ['typeOfUser','eID'];
 
-  let addDSMapArgs = ['{"DSHash": "'+dsNonceHash+'", "DSId":"'+supId+'","Recipient":null}' ];
+  let addDSMapArgs = ['{"DSHash":"'+dsNonceHash+'", "DSId":"'+supId+'", "Email":"'+employerEmail+'", "Recipient":null}' ];
+
+  let emailBody = '<p>Click<a href="http://' + srvUtils.address + ':'+srvUtils.port+'/supplement/view/'
+                      +dsNonceHash +'"> here</a> to view the shared diploma supplement </p>';
 
   let addDSMapReq = {
     // Name (hash) required for invoke
@@ -278,9 +428,9 @@ router.get('/share',(req,res) =>{
       .then(addDSFnc)
       .then( rsp => {
         counter = 10;
-        emailHelper.sendEmail("triantafyllou.ni@gmail.com","this is a test "
-                                + dsNonceHash); //this returns a promise
-        res.send(rsp);
+
+        emailHelper.sendEmail(employerEmail,emailBody); //this returns a promise
+        res.status(200).send(rsp);
       })
       .catch(err =>{
         // console.log("counter" + counter);
@@ -290,7 +440,7 @@ router.get('/share',(req,res) =>{
           counter ++;
           tryToAddDS();
         }else{
-          res.send("failed, to get  supplements after " + counter + " attempts");
+          res.status(400).send("failed, to get  supplements after " + counter + " attempts");
         }
       });
 

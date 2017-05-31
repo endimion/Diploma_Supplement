@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"encoding/json"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
+	"crypto/rand"
 
 )
 
@@ -56,6 +57,8 @@ type DiplomaSupplementMapsAsset struct{
 type DiplomaSupplementMap struct {
 	DSHash string
 	DSId string
+	Email string
+	Code string
 	Recipient string
 }
 
@@ -109,6 +112,10 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 
 	if function == "addRecepientToDSMap"{
 		return t.addRecepientToDSMap(stub,args)
+	}
+
+	if function == "genCodeForDSMap"{
+		return t.genCodeForDSMap(stub,args)
 	}
 
 	return nil, nil
@@ -464,13 +471,14 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 				which is identified by the give DSHash (args[0])
 				*/
 				func (t *SimpleChaincode) addRecepientToDSMap(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
-					if len(args) != 2 {
-						return nil, errors.New("Incorrect number of arguments. Expecting 2")
+					if len(args) != 3 {
+						return nil, errors.New("Incorrect number of arguments. Expecting 3")
 					}
 
 					//encode into a DiplomaSupplementMap from strct the argument
 					dsHash := args[0]
 					recepientEid := args[1]
+					emailedCode := args[2]
 
 					//get the assets from the state
 					assetBytes, err := stub.GetState("assets")
@@ -489,165 +497,268 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 							// return nil, errors.New("No DiplomaSupplementMap is already finalized! Cannot add new Recipient!")
 							//transactions cannot return errors this way we have to use an event
 							// return nil, errors.New("No Supplement Found with the given ID")
-								tosend := "Error, DiplomaSupplementMap is already finalized! Cannot add new Recipient!" +"." + stub.GetTxID()
-								err = stub.SetEvent("evtsender", []byte(tosend))
-								if err != nil {
-									return nil, err
-								}
+							tosend := "Error, DiplomaSupplementMap is already finalized! Cannot add new Recipient!" +"." + stub.GetTxID()
+							err = stub.SetEvent("evtsender", []byte(tosend))
+							if err != nil {
+								return nil, err
+							}
 							}else{
-								dsMap.Recipient = recepientEid
-								//update the assets and put them in the state
-								assets.DiplomaSupplementMap[dsHash] = dsMap
-								encodedAssets,err  := json.Marshal(assets)
-								if err != nil {
-									return nil, err
+								if dsMap.Code != emailedCode {
+										tosend := "Error, Wrong Authorization code!" +"." + stub.GetTxID()
+										err = stub.SetEvent("evtsender", []byte(tosend))
+										if err != nil {
+											return nil, err
+										}
+									}else{
+										dsMap.Recipient = recepientEid
+										//update the assets and put them in the state
+										//update the DSMap
+										assets.DiplomaSupplementMap[dsHash] = dsMap
+
+										//update the actual supplement
+										supplementSlice := assets.Supplements
+										suplementId := dsMap.DSId
+										supToUpdate , position := findSupplementInSlice(supplementSlice, suplementId)
+										if position == -1 {
+											tosend := "Error, No supplement found for the given ID" +suplementId+ "."+ stub.GetTxID()
+											err = stub.SetEvent("evtsender", []byte(tosend))
+											if err != nil {
+												return nil, err
+											}
+										}
+										supToUpdate.Authorized = append(supToUpdate.Authorized,recepientEid)
+										//delete the old version of the supplement
+										supplementSlice = removeFromSlice(supplementSlice,position)
+										//add the new supplement
+										supplementSlice = append(supplementSlice,supToUpdate)
+										assets.Supplements = supplementSlice
+
+
+										encodedAssets,err  := json.Marshal(assets)
+										if err != nil {
+											return nil, err
+										}
+										err = stub.PutState("assets", []byte(encodedAssets))
+										if err != nil {
+											return nil, err
+										}
+										//Execution of chaincode finishe successfully
+										tosend := "Tx chaincode finished OK." + stub.GetTxID()
+										err = stub.SetEvent("evtsender", []byte(tosend))
+										if err != nil {
+											return nil, err
+										}
+									}
+
 								}
-								err = stub.PutState("assets", []byte(encodedAssets))
-								if err != nil {
-									return nil, err
+								}else{
+									// return nil, errors.New("No DiplomaSupplementMap Found with the given hash")
+									tosend := "Error, No DiplomaSupplementMap Found with the given hash " + dsHash + "."+ stub.GetTxID()
+									err = stub.SetEvent("evtsender", []byte(tosend))
+									if err != nil {
+										return nil, err
+									}
+
 								}
-								//Execution of chaincode finishe successfully
-								tosend := "Tx chaincode finished OK." + stub.GetTxID()
-								err = stub.SetEvent("evtsender", []byte(tosend))
-								if err != nil {
-									return nil, err
+
+								return nil, nil
+							}
+
+
+							/*
+							generates a random string and adds it at the field of the DSMap
+							*/
+							func (t *SimpleChaincode) genCodeForDSMap(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+								if len(args) != 1 {
+									return nil, errors.New("Incorrect number of arguments. Expecting 1")
 								}
-							}
-						}else{
-							// return nil, errors.New("No DiplomaSupplementMap Found with the given hash")
-							tosend := "Error, No DiplomaSupplementMap Found with the given hash " + dsHash + "."+ stub.GetTxID()
-							err = stub.SetEvent("evtsender", []byte(tosend))
-							if err != nil {
-								return nil, err
-							}
+								dsHash := args[0]
+								emailCode := getRandString(5)
 
-						}
+								//get the assets from the state
+								assetBytes, err := stub.GetState("assets")
+								if err != nil {
+									jsonResp := "{\"Error\":\"Failed to get state for key \"assets\"}"
+									return nil, errors.New(jsonResp)
+								}
+								assets := Assets{}
+								json.Unmarshal([]byte(assetBytes), &assets)
 
-						return nil, nil
-					}
+								//find the DSMap in the state
+								dsMap,ok:= assets.DiplomaSupplementMap[dsHash]
+								if ok {
+									if dsMap.Recipient != "" {
+										// return nil, errors.New("No DiplomaSupplementMap is already finalized! Cannot add new Recipient!")
+										//transactions cannot return errors this way we have to use an event
+										// return nil, errors.New("No Supplement Found with the given ID")
+										tosend := "Error, DiplomaSupplementMap is already finalized! Cannot add new Recipient!" +"." + stub.GetTxID()
+										err = stub.SetEvent("evtsender", []byte(tosend))
+										if err != nil {
+											return nil, err
+										}
+										}else{
+											dsMap.Code = emailCode
+											//update the assets and put them in the state
+											//update the DSMap
+											assets.DiplomaSupplementMap[dsHash] = dsMap
 
+											encodedAssets,err  := json.Marshal(assets)
+											if err != nil {
+												return nil, err
+											}
+											err = stub.PutState("assets", []byte(encodedAssets))
+											if err != nil {
+												return nil, err
+											}
+											//Execution of chaincode finishe successfully
+											tosend := "Tx chaincode finished OK." + stub.GetTxID()
+											err = stub.SetEvent("evtsender", []byte(tosend))
+											if err != nil {
+												return nil, err
+											}
+										}
+										}else{
+											// return nil, errors.New("No DiplomaSupplementMap Found with the given hash")
+											tosend := "Error, No DiplomaSupplementMap Found with the given hash " + dsHash + "."+ stub.GetTxID()
+											err = stub.SetEvent("evtsender", []byte(tosend))
+											if err != nil {
+												return nil, err
+											}
 
+										}
 
-
-
-
-					// Updates a DiplomaSupplement, passed by its id, (args[0]) such that
-					// it can be viewed by the user args[1]
-					func (t *SimpleChaincode) addAuthorizedUser(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
-						if len(args) != 2 {
-							return nil, errors.New("Incorrect number of arguments. Expecting 2")
-						}
-						//the DiplomaSupplement id
-						suplementId := args[0]
-						//the user that should be allowed to view the supplement
-						newUser := args[1]
-
-
-						//get the assets from the state
-						assetBytes, err := stub.GetState("assets")
-						if err != nil {
-							jsonResp := "{\"Error\":\"Failed to get state for key \"assets\"}"
-							return nil, errors.New(jsonResp)
-						}
-						//get the supplements from the assets
-						assets := Assets{}
-						json.Unmarshal([]byte(assetBytes), &assets)
-						supplementSlice := assets.Supplements
-
-						supToUpdate , position := findSupplementInSlice(supplementSlice, suplementId)
-						if position == -1 {
-							return nil, errors.New("No supplement found with the given ID " + suplementId)
-						}
-
-
-						// Here the ABAC API is called to verify the attributes, only then will the
-						// supplement be updated
-						isStudent, _ := stub.VerifyAttribute("typeOfUser", []byte("Student"))
-						isOwner, _ := stub.VerifyAttribute("eID", []byte(supToUpdate.Owner))
-
-						if isStudent && isOwner{
-
-							supToUpdate.Authorized = append(supToUpdate.Authorized,newUser)
-
-							//delete the old version of the supplement
-							supplementSlice = removeFromSlice(supplementSlice,position)
-							//add the new supplement
-							supplementSlice = append(supplementSlice,supToUpdate)
-
-							assets.Supplements = supplementSlice
-
-							//update the state with the new assets
-							encodedAssets,err  := json.Marshal(assets)
-							if err != nil {
-								return nil, err
-							}
-							err = stub.PutState("assets", []byte(encodedAssets))
-							if err != nil {
-								return nil, err
-							}
-							//Execution of chaincode finishe successfully
-							tosend := "Tx chaincode finished OK." + stub.GetTxID()
-							err = stub.SetEvent("evtsender", []byte(tosend))
-							if err != nil {
-								return nil, err
-							}
-
-						}
-						return nil, nil
-					}
-
-
-					func findSupplementInSlice(s []DiplomaSupplement, supplementId string) (res DiplomaSupplement, pos int){
-						pos = -1
-						for index,element := range s {
-							// element is the element from someSlice for where we are
-							if element.Id == supplementId {
-								res = element
-								pos = index
-							}
-						}
-						return res, pos
-					}
-
-
-					func findDipSupMapInSlice(s []DiplomaSupplementMap, dsHash string) (res DiplomaSupplementMap, pos int){
-						pos = -1
-						for index,element := range s {
-							// element is the element from someSlice for where we are
-							if element.DSHash == dsHash {
-								res = element
-								pos = index
-							}
-						}
-						return res, pos
-					}
-
-
-					/**
-					A DiplomaSupplement slice, s
-					The position of the supplement to remove, i
-					**/
-					func removeFromSlice(s []DiplomaSupplement, i int) []DiplomaSupplement {
-						s[len(s)-1], s[i] = s[i], s[len(s)-1]
-						return s[:len(s)-1]
-					}
-
-					/**
-					A DiplomaSupplementMap slice, s
-					The position of the dsMap to remove, i
-					**/
-					func removeDipSupMapFromSlice(s []DiplomaSupplementMap, i int) []DiplomaSupplementMap {
-						s[len(s)-1], s[i] = s[i], s[len(s)-1]
-						return s[:len(s)-1]
-					}
+										return nil, nil
+									}
 
 
 
 
+									// Updates a DiplomaSupplement, passed by its id, (args[0]) such that
+									// it can be viewed by the user args[1]
+									func (t *SimpleChaincode) addAuthorizedUser(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+										if len(args) != 2 {
+											return nil, errors.New("Incorrect number of arguments. Expecting 2")
+										}
+										//the DiplomaSupplement id
+										suplementId := args[0]
+										//the user that should be allowed to view the supplement
+										newUser := args[1]
 
-					func main() {
-						err := shim.Start(new(SimpleChaincode))
-						if err != nil {
-							fmt.Printf("Error starting Simple chaincode: %s", err)
-						}
-					}
+
+										//get the assets from the state
+										assetBytes, err := stub.GetState("assets")
+										if err != nil {
+											jsonResp := "{\"Error\":\"Failed to get state for key \"assets\"}"
+											return nil, errors.New(jsonResp)
+										}
+										//get the supplements from the assets
+										assets := Assets{}
+										json.Unmarshal([]byte(assetBytes), &assets)
+										supplementSlice := assets.Supplements
+
+										supToUpdate , position := findSupplementInSlice(supplementSlice, suplementId)
+										if position == -1 {
+											return nil, errors.New("No supplement found with the given ID " + suplementId)
+										}
+
+
+										// Here the ABAC API is called to verify the attributes, only then will the
+										// supplement be updated
+										isStudent, _ := stub.VerifyAttribute("typeOfUser", []byte("Student"))
+										isOwner, _ := stub.VerifyAttribute("eID", []byte(supToUpdate.Owner))
+
+										if isStudent && isOwner{
+
+											supToUpdate.Authorized = append(supToUpdate.Authorized,newUser)
+
+											//delete the old version of the supplement
+											supplementSlice = removeFromSlice(supplementSlice,position)
+											//add the new supplement
+											supplementSlice = append(supplementSlice,supToUpdate)
+
+											assets.Supplements = supplementSlice
+
+											//update the state with the new assets
+											encodedAssets,err  := json.Marshal(assets)
+											if err != nil {
+												return nil, err
+											}
+											err = stub.PutState("assets", []byte(encodedAssets))
+											if err != nil {
+												return nil, err
+											}
+											//Execution of chaincode finishe successfully
+											tosend := "Tx chaincode finished OK." + stub.GetTxID()
+											err = stub.SetEvent("evtsender", []byte(tosend))
+											if err != nil {
+												return nil, err
+											}
+
+										}
+										return nil, nil
+									}
+
+
+									func findSupplementInSlice(s []DiplomaSupplement, supplementId string) (res DiplomaSupplement, pos int){
+										pos = -1
+										for index,element := range s {
+											// element is the element from someSlice for where we are
+											if element.Id == supplementId {
+												res = element
+												pos = index
+											}
+										}
+										return res, pos
+									}
+
+
+									func findDipSupMapInSlice(s []DiplomaSupplementMap, dsHash string) (res DiplomaSupplementMap, pos int){
+										pos = -1
+										for index,element := range s {
+											// element is the element from someSlice for where we are
+											if element.DSHash == dsHash {
+												res = element
+												pos = index
+											}
+										}
+										return res, pos
+									}
+
+
+									/**
+									A DiplomaSupplement slice, s
+									The position of the supplement to remove, i
+									**/
+									func removeFromSlice(s []DiplomaSupplement, i int) []DiplomaSupplement {
+										s[len(s)-1], s[i] = s[i], s[len(s)-1]
+										return s[:len(s)-1]
+									}
+
+									/**
+									A DiplomaSupplementMap slice, s
+									The position of the dsMap to remove, i
+									**/
+									func removeDipSupMapFromSlice(s []DiplomaSupplementMap, i int) []DiplomaSupplementMap {
+										s[len(s)-1], s[i] = s[i], s[len(s)-1]
+										return s[:len(s)-1]
+									}
+
+									/*
+									make and return a random string of n-length
+									*/
+									func getRandString(n int) string {
+										b := make([]byte, n)
+										if _, err := rand.Read(b); err != nil {
+											fmt.Printf("Error making random string: %s", err)
+										}
+										return fmt.Sprintf("%X", b)
+									}
+
+
+
+									func main() {
+										err := shim.Start(new(SimpleChaincode))
+										if err != nil {
+											fmt.Printf("Error starting Simple chaincode: %s", err)
+										}
+									}
