@@ -182,7 +182,8 @@ router.get('/edit/:supId',(req,res) =>{
 });
 
 
-
+/* TODO fix when your has already been added to DSHash
+*/
 router.get('/view/:dsHash',(req,res) =>{
   let userName = req.session.eID;
   let dsHash = req.params.dsHash;
@@ -281,7 +282,10 @@ router.get('/view/:dsHash',(req,res) =>{
 router.post('/view/auth/:dsHash',(req,res) =>{
   let userName = req.session.eID;
   let dsHash = req.params.dsHash;
-  let code = req.params.code;
+  let code = req.body.valCode;
+
+
+  console.log("user " + userName + " dsHash " + dsHash + " code " + code );
 
   if(userName){
     let _enrollAttr = [{name:'typeOfUser',value:req.session.userType},{name:"eID",value:req.session.eID}];
@@ -294,8 +298,10 @@ router.post('/view/auth/:dsHash',(req,res) =>{
         return new Promise(function(resolve,reject){
           getHashBound(user)
           .then(response => {
-            let dsHash = JSON.parse(response);
-            resolve({"user":user,"supId": dsHash.DSId, "email":dsHash.Email });
+            let result = JSON.parse(response);
+            // console.log(result);
+            resolve({"user":user,"supId": result.DSId, "email":result.Email,
+                        "dsHash" : result.DSHash});
           })
           .catch(err => reject(err));
         });
@@ -303,7 +309,7 @@ router.post('/view/auth/:dsHash',(req,res) =>{
 
     let tryToUpdateDSMapReceipient = function(data){
         let user = data.user;
-        let _args = [dsHash,userName,code];
+        let _args = [data.dsHash,userName,code];
         let _invAttr = ['typeOfUser','eID'];
         let invReq = {
           chaincodeID: basic.config.chaincodeID,
@@ -311,10 +317,12 @@ router.post('/view/auth/:dsHash',(req,res) =>{
           args: _args,
           attrs: _invAttr
         };
+        // console.log(invReq);
+
         return new Promise(function(resolve,reject){
           basic.invoke(user,invReq)
           .then(response => {
-            console.log(response);
+            // console.log(response);
             resolve(data)
           })
           .catch(err => {
@@ -333,8 +341,8 @@ router.post('/view/auth/:dsHash',(req,res) =>{
         let email = [data.email];
         let _args = [data.supId];
         let _qAttr = ['typeOfUser','eID'];
-        console.log("Query:   args " + data.supId + " email " + email);
-        console.log({name:'typeOfUser',value:req.session.userType},{name:"eID",value:req.session.eID});
+        // console.log("Query:   args " + data.supId + " email " + email);
+        // console.log({name:'typeOfUser',value:req.session.userType},{name:"eID",value:req.session.eID});
 
         let testQ2 = new chainCodeQuery(_qAttr, _args, basic.config.chaincodeID,"getSupplementById",basic.query);
         let testQfunc2 = testQ2.makeQuery.bind(testQ2);
@@ -356,7 +364,7 @@ router.post('/view/auth/:dsHash',(req,res) =>{
         .then(tryToUpdateDSMapReceipient)
         .then(tryToGetSup)
         .then(response =>{
-          console.log("\nthe result is" + response);
+          // console.log("\nthe result is" + response);
           counter = 10;
           let supplement = JSON.parse(response);
           res.render('viewSingleSupplement',{ title: 'View Supplement',

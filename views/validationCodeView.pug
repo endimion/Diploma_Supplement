@@ -13,8 +13,8 @@ block content
         // register form
         form(method='POST' action='/supplement/view/auth/'+dsHash)
           div.form-group
-            label(for='code') Validation Code:
-            input#code.form-control(type='text' name='code')
+            label(for='valCode') Validation Code:
+            input#valCode.form-control(type='text', placeholder='validation code received by mail' name='valCode')
           div.form-group
             input#dsHash.form-control(type='hidden' name='dsHash' value = dsHash)    
           button.btn.btn-primary(type='submit') Submit

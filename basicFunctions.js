@@ -168,6 +168,7 @@ function enrollAndRegisterUsers(userName,enrollAttr) {
     try{
       // Enroll a 'admin' who is already registered because it is
       // listed in fabric/membersrvc/membersrvc.yaml with it's one time password.
+      // console.log("will enroll admin with " + networkConfig.users[0].enrollId + " and " + networkConfig.users[0].enrollSecret)
       networkConfig.chain.enroll(networkConfig.users[0].enrollId,
         networkConfig.users[0].enrollSecret, function(err, admin) {
           if (err) reject("\nERROR: failed to enroll admin : " + err) ;
@@ -196,7 +197,7 @@ function enrollAndRegisterUsers(userName,enrollAttr) {
             //setting timers for fabric waits
             // chain.setDeployWaitTime(config.deployWaitTime);
             networkConfig.chain.setDeployWaitTime(400);
-            networkConfig.chain.setInvokeWaitTime(30);
+            networkConfig.chain.setInvokeWaitTime(60);
             // console.log("\nDeploying chaincode ...");
 
             //Similarly set timer for invocation transactions

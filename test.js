@@ -279,7 +279,7 @@ function testGetSupplements(){
 
 
 function testGetDSMap(){
-  let _args = ["hash1"];
+  let _args = ["be60905fd9b40388413a88b2cbe9371d5606b95d6b49c1d8543f02843763db94"];//hash1
   let testQ2 = new ChainCodeQuery(attributes, _args, basic.config.chaincodeID,"getDiplomaSupplementMapsByHash",basic.query);
   let testQfunc2 = testQ2.makeQuery.bind(testQ2);
   basic.enrollAndRegisterUsers(basic.config.newUserName,enrollAttr)

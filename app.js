@@ -11,6 +11,8 @@ const session = require('express-session'); //warning The default server-side se
 const qr = require('./routes/qrCodeRoutes');
 const srvUtils = require('./utils/serverUtils.js');
 const basic = require('./basicFunctions');
+const timeout = require('connect-timeout');
+
 
 // view engine setup
 app.set('views', path.join(__dirname,'views'));
@@ -27,6 +29,8 @@ app.use(session({
   saveUninitialized: true,
   cookie: { secure: false }
 })); //set up middleware for session handling
+app.use(timeout(120000));
+app.use(haltOnTimedout);
 app.use('/',viewRouters);
 app.use('/login',loginRoutes);
 app.use('/supplement',supplementRoutes);
@@ -59,3 +63,8 @@ process.on('uncaughtException', function(err) {
     // handle the error safely
     console.log(err)
 })
+
+
+function haltOnTimedout(req, res, next){
+  if (!req.timedout) next();
+}
