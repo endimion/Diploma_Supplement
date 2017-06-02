@@ -69,7 +69,7 @@ testDeploy();
 
 
 function testDeploy(){
-  basic.enrollAndRegisterUsers(basic.config.newUserName,enrollAttr)
+  basic.enrollAndRegisterUsers('deployer',enrollAttr)
   .then( user => {
     basic.deploy(user,deployRequest).then(res=> {console.log(res);
       process.exit(0);

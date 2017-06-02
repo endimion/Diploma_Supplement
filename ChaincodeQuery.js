@@ -22,4 +22,21 @@ module.exports = class  ChainCodeQuery{
     };
     return this.queryFunction(user,queryRequest,this.attributes);
   }
+
+  getResponseWithUser(user){
+    let that = this;
+    let queryRequest = {
+      // Name (hash) required for query
+      chaincodeID: that.chaincode,
+      // Function to trigger
+      fcn: that.functionName,
+      // Existing state variable to retrieve
+      args: that.args,
+      //pass explicit attributes to teh query
+      attrs: that.attributes
+    };
+    return {"user":user,"promise":this.queryFunction(user,queryRequest,this.attributes)};
+  }
+
+
 }
