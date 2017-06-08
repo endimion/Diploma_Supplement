@@ -38,14 +38,17 @@ block content
                             <i class="material-icons">mail</i>
                         </li>
                         //- <li><a class="btn-floating green" style="transform: scaleY(0.4) scaleX(0.4) translateY(0px) translateX(40px); opacity: 0;"><i class="material-icons">publish</i></a></li>
-                        <li><a href="#modal"+{val.Id} class="btn-floating blue" style="transform: scaleY(0.4) scaleX(0.4) translateY(0px) translateX(40px); opacity: 0;"><i class="material-icons">dashboard</i></a></li>
+                        <li>
+                          a.btn-floating.blue.darken-1.modal-trigger(href="#modalQR"+ val.Id,  style="transform: scaleY(0.4) scaleX(0.4) translateY(0px) translateX(40px); opacity: 0;") 
+                            <i class="material-icons">dashboard</i>
+                        </li>
                       </ul>
                     </div>
-                  <!-- Modal Structure -->
+                  <!-- Modal Share by Email Structure -->
                    div.modal(id="modal"+val.Id)
                     <div class="modal-content">
                       <h4>Share the DiplomaSupplement #{val.Id}</h4>
-                      <p>Send a sharable link via email</p>
+                      p.modalMessage Send a sharable link via email 
                       form.sendEmail(action='#')
                         div.form-group
                           label(for='email') Recipient Email:
@@ -53,6 +56,28 @@ block content
                         div.form-group
                           input.form-control(id='supId'+val.Id,type='hidden',  name='supId', value=val.Id)
                         a.waves-effect.waves-green.btn-flat(onclick='sendEmail("email'+val.Id+'",'+'"supId'+val.Id+'","'+val.Id+'")') Send  
+                      include preloader  
+                  </div>
+                  <!-- Modal Share by QE Structure -->
+                   div.modal(id="modalQR"+val.Id)
+                    <div class="modal-content">
+                      <h4>Share the DiplomaSupplement #{val.Id} </h4>
+                       p.modalMessage Generate a QR code you can insert in your CV tha only the email owner can view!
+                      form.sendEmail(action='#')
+                        div.form-group
+                          label(for='email') Recipient Email:
+                          input.form-control(id='qrEmail'+val.Id, type='email', placeholder='name@email.com' name='email')
+                        div.form-group
+                          input.form-control(id='qrSupId'+val.Id,type='hidden',  name='qrSupId', value=val.Id)
+                        a.waves-effect.waves-green.btn-flat(onclick='makeQRcode("qrEmail'+val.Id+'",'+'"qrSupId'+val.Id+'","'+val.Id+'")') Generate QR link  
+                      div.qrCode(style="display:none")
+                        div.qrMessage(style="width:60%; float:right")
+                          p Save this image and add it to your Cv
+                          p Upon scanning it the recipient will recieve a code by email
+                          p that will allow them to view your Diploma Supplement
+                        //- div(id="qrImage"+val.Id,style="width:30%;float:left")
+                        canvas(id="canvas"+val.Id ,style="width:30%;float:left; display:none")
+                        div(id="imgContainer" +val.Id,style="width:30%;float:left;margin: 0.2em 0 1em 0;")
                       include preloader  
                   </div>
 
@@ -72,11 +97,23 @@ block content
         a.btn.btn-primary(href="/login") Back 
 
 
+  script(type="text/javascript" src="http://canvg.github.io/canvg/rgbcolor.js")
+  script(type="text/javascript" src="http://canvg.github.io/canvg/StackBlur.js")
+  script(type="text/javascript" src="http://canvg.github.io/canvg/canvg.js")
   script
     include ../scripts/qrScript.js
   script
     include ../scripts/emailScript.js
   script.
+    var onModalHide = function() {
+      $(".sendEmail").show();
+      $(".modalMessage").show();
+      $(".preloader").hide();
+      $(".qrCode").hide();
+      
+    };
     $(document).ready(function(){
-        $('.modal').modal();
+        $('.modal').modal({
+            complete : onModalHide  
+        });
     });

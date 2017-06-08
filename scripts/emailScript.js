@@ -25,8 +25,8 @@ function sendEmail(emailInput,supIdInput,id){
   })
   .always(function() {
     $('#modal'+id).modal('close');
-    $(".sendEmail").show();
-    $(".preloader").hide();
+    // $(".sendEmail").show();
+    // $(".preloader").hide();
   });
 
 

@@ -4,6 +4,9 @@
 const basic = require('../basicFunctions');
 const chainCodeQuery = require('../ChaincodeQuery.js');
 const emailHelper = require('../utils/emailClient.js');
+const srvUtils = require('../utils/serverUtils.js');
+const supUtils = require('../utils/SupplementUtils.js');
+const qr = require('qr-image');
 
 exports.publishSupplement = function(owner, university, _id){
   // console.log(owner + university + _id);
@@ -97,20 +100,6 @@ exports.getSupplementByHash = function(userEid, dsHash,userType){
     let tryToGenerateAndEmailCode = makeHfcCall(tryToGenerateAndEmailCodeChain,10,
                                     genAndEmailSuccess,reject,userEid,_enrollAttr);
 
-    // let tryToGetSupplement = function(data){
-    //   let _qAttr = ['typeOfUser','eID'];
-    //   let _args = [data.supId];
-    //   let getSup = new chainCodeQuery(_qAttr, _args, basic.config.chaincodeID,"getSupplementById",basic.query);
-    //   let getSupB = getSup.makeQuery.bind(getSup);
-    //   let successFnc = function(response){
-    //     let supplement = JSON.parse(response);
-    //     resolve({ title: 'View Supplement',
-    //     message: 'Welcome user: ' + userEid , userType: userType,
-    //     supplement: supplement,view: 'viewSingleSupplement'});
-    //   }
-    //   return makeHfcCall(getSupB,10,successFnc,reject,userEid,_enrollAttr);
-    // }
-
     let getDSHash = function(user){
       let successFnc = function(rsp){
           console.log("\nsuccess");
@@ -137,6 +126,69 @@ exports.getSupplementByHash = function(userEid, dsHash,userType){
       makeHfcCall(getDSHash,10, (x) =>{x},reject,userEid,_enrollAttr)();
     });
 };
+
+
+
+
+
+
+exports.shareSupplement = function(employerEmail,supId,userEid, userType){
+  return new Promise( (resolve,reject) => {
+    let dsNonceHash = supUtils.generateSupplementHash(employerEmail, supId, userEid);
+    let _enrollAttr = [{name:'typeOfUser',value:userType},{name:"eID",value:userEid}];
+    let _invAttr = ['typeOfUser','eID'];
+    let addDSMapArgs = ['{"DSHash":"'+dsNonceHash+'", "DSId":"'+supId+'", "Email":"'+employerEmail+'", "Recipient":null}' ];
+
+    let emailBody = '<p>Click<a href="http://' + srvUtils.address + ':'+srvUtils.port+'/supplement/view/'
+    +dsNonceHash +'"> here</a> to view the shared diploma supplement </p>';
+
+    let addDSMapReq = {
+      chaincodeID: basic.config.chaincodeID,
+      fcn: "addDiplomaSupplementMap",
+      args: addDSMapArgs,
+      attrs: _invAttr
+    };
+    let addDSFnc = invokeCurryPromise(addDSMapReq);
+    let addDSMap = function(user){
+      return addDSFnc(user).then( resp => {emailHelper.sendEmail(employerEmail,emailBody);});
+    }
+    makeHfcCall(addDSMap,10,resolve,reject,userEid,_enrollAttr)();
+  });
+};
+
+
+exports.shareSupplementQR = function(employerEmail,supId,userEid, userType){
+  return new Promise( (resolve,reject) => {
+    let dsNonceHash = supUtils.generateSupplementHash(employerEmail, supId, userEid);
+    let _enrollAttr = [{name:'typeOfUser',value:userType},{name:"eID",value:userEid}];
+    let _invAttr = ['typeOfUser','eID'];
+    let addDSMapArgs = ['{"DSHash":"'+dsNonceHash+'", "DSId":"'+supId+'", "Email":"'+employerEmail+'", "Recipient":null}' ];
+    let addDSMapReq = {
+      chaincodeID: basic.config.chaincodeID,
+      fcn: "addDiplomaSupplementMap",
+      args: addDSMapArgs,
+      attrs: _invAttr
+    };
+    let addDSFnc = invokeCurryPromise(addDSMapReq);
+
+    let addDSMap = function(user){
+      return addDSFnc(user);
+    }
+    let successFnc = function(result){
+      let code = qr.image('http://'+srvUtils.address+ ':'+srvUtils.port+'/supplement/view/'+dsNonceHash, { type: 'svg' });
+      // res.type('svg');
+      // code.pipe(res);
+      resolve(code);
+    }
+
+    makeHfcCall(addDSMap,10,successFnc,reject,userEid,_enrollAttr)();
+  });
+};
+
+
+
+
+
 
 
 

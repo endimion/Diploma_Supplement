@@ -1,6 +1,8 @@
 'use strict';
 
-process.env.GOPATH = __dirname;
+// process.env.GOPATH = __dirname;
+// process.env.GOPATH = __dirname;
+console.log("GO ENV " + process.env.GOPATH); //this should maybe be passed as  parameter to the app
 
 var hfc = require('hfc');
 var util = require('util');
@@ -197,7 +199,7 @@ function enrollAndRegisterUsers(userName,enrollAttr) {
             //setting timers for fabric waits
             // chain.setDeployWaitTime(config.deployWaitTime);
             networkConfig.chain.setDeployWaitTime(400);
-            networkConfig.chain.setInvokeWaitTime(60);
+            // networkConfig.chain.setInvokeWaitTime(60);
             // console.log("\nDeploying chaincode ...");
 
             //Similarly set timer for invocation transactions
@@ -292,6 +294,11 @@ function invokeWithParams(userObj,invReq) {
       invokeTx.on('error', function(err) {
         // Invoke transaction submission failed
         console.log(util.format("\nFailed to submit chaincode invoke transaction: request=%j, error=%j", invReq, err));
+        if(util.format("%j",err).indexOf("timed out") >=0){
+          console.log("Timeout detected!!")
+          console.log("Timeout Time " + networkConfig.chain.getInvokeWaitTime());
+          networkConfig.chain.setInvokeWaitTime( 40 );
+        }
         reject(err);
       });
 
@@ -315,8 +322,8 @@ function invokeWithParams(userObj,invReq) {
               eh.unregisterChaincodeEvent(regid);
               resolve(event.payload.toString());
             }
+            networkConfig.chain.setInvokeWaitTime(20);
         }
-
       });
     });
 

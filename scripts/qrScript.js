@@ -29,3 +29,32 @@ function getAndDisplayOrHideQr(supId,parentNodeId){
   }
 
 }
+
+
+function makeQRcode(emailInput,supIdInput,id){
+  let _email = $("#"+emailInput).val();
+  let _supId = $("#"+ supIdInput).val();
+  // console.log("will send email " + _email + " id " + _supId);
+  let params  = "supId="+_supId+"&email="+_email;
+  $(".sendEmail").hide();
+  $(".modalMessage").hide();
+  $(".qrCode").hide();
+  $(".preloader").show();
+
+  let xhr = new XMLHttpRequest();
+  xhr.open("POST", "/supplement/shareQR", true);
+  xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+  xhr.onload = function(e) {
+    $(".preloader").hide();
+    $(".qrCode").show();
+    // let div = document.getElementById("qrImage"+id);
+    // div.innerHTML = this.responseText;
+    canvg(document.getElementById('canvas'+id), this.responseText,{ ignoreMouse: true, ignoreAnimation: true });
+    // makeQRLink("qrImage"+id,"qrLink"+id);
+    let canvas = document.getElementById('canvas'+id);
+    let img    = canvas.toDataURL("image/png");
+    document.getElementById('imgContainer'+id).innerHTML = "<img src='" + img + "'>";
+
+  }
+  xhr.send(params);
+}
