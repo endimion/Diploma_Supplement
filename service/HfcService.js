@@ -7,6 +7,7 @@ const emailHelper = require('../utils/emailClient.js');
 const srvUtils = require('../utils/serverUtils.js');
 const supUtils = require('../utils/SupplementUtils.js');
 const qr = require('qr-image');
+const util = require('util');
 
 exports.publishSupplement = function(owner, university, _id){
   // console.log(owner + university + _id);
@@ -91,8 +92,8 @@ exports.getSupplementByHash = function(userEid, dsHash,userType){
 
     let genAndEmailSuccess = response =>{
         resolve( { title: 'Enter Validation Code',
-        message: ' <p> Welcome user: ' + userEid  + '</p>'
-        +'<p> Please enter below the validation code you received via email </p>'   ,
+        message: 'Welcome user: ' + userEid  + '\n'
+        +'Please enter below the validation code you received via email'   ,
         userType: userType,
         dsHash: dsHash, view: 'validationCodeView'});
       };
@@ -245,8 +246,16 @@ function makeHfcCall(hfcFunc,times,successCallback,failureCallback,user,enrollAt
               counter ++;
               innerFunction();
             }else{
+              console.log("HfcService");
               console.log(err);
-              failureCallback("failed, to get  supplements after " + counter + " attempts");
+              // failureCallback("failed, to get  supplements after " + counter + " attempts");
+              try{
+                let error = JSON.parse(util.format("%j",err));
+                failureCallback(error.msg);
+              }catch(e){
+                console.log(e);
+                failureCallback(util.format("%j",err));
+              }
             }
           });
       };
