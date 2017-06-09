@@ -27,7 +27,18 @@ router.post('/publish',(req,res) =>{
   let _id = req.body.id;
   hfcService.publishSupplement(owner,university,_id)
   .then( result => {
-       res.send(result);
+      //  res.send(result);
+      if(req.session.userType === 'University'){
+        res.render('univMainView',{ title: 'University Management Page',
+        message: 'Welcome user: ' + req.session.eID  + ".\n Supplement Published Successfully!!",
+        university: req.session.eID});
+      }else{
+        if(req.session.userType === 'Student'){
+          res.render('stdMainView',{ title: 'Publish a new Diploma Supplement',
+          message: 'Welcome user: ' + req.session.eID ,
+          stdId: req.session.eID});
+        }
+      }
   })
   .catch( err => {
        res.send(err);

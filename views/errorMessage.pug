@@ -1,0 +1,25 @@
+extends layout
+
+
+block content
+  .main.container
+    .row
+      .col.l12.m12.col-md-offset-3
+        h3.display-4.m-b-2= title
+    .row
+      .col.l12.md12.col-md-offset-3
+        div.col-m-12=message
+    .row
+      .col.s12.m6
+        .card
+          .card-content#textContent
+            span.card-title Supplement #{supplement.Id}
+            p Owner:  #{supplement.Owner}
+            p University:#{supplement.University}
+    .row
+      .col.l6.m6.col-md-offset-3
+        a.btn.btn-primary(href="/login") Back 
+
+
+  script
+    include ../scripts/qrScript.js

@@ -1,9 +1,8 @@
 'use strict';
 
 // process.env.GOPATH = __dirname;
-process.env.GOPATH = __dirname; //this is needed when you want to deploy. HFC  searches in the GOAPTH folder for
-//the chaincode
-// console.log("GO ENV " + process.env.GOPATH); //this should maybe be passed as  parameter to the app
+// process.env.GOPATH = __dirname;
+console.log("GO ENV " + process.env.GOPATH); //this should maybe be passed as  parameter to the app
 
 var hfc = require('hfc');
 var util = require('util');
@@ -15,8 +14,8 @@ var userObj;
 
 var chaincodeID;
 //var certFile = 'us.blockchain.ibm.com.cert';
-// var chaincodeIDPath = __dirname + "/chaincodeID";
-var chaincodeIDPath = __dirname + "/chaincodeIDLocalHost";
+var chaincodeIDPath = __dirname + "/chaincodeID";
+
 
 
 // object to hold all of the configuration of the
@@ -48,8 +47,27 @@ function initNetwork() {
   }
 
 
-  setupSinglePeer();
-  // setup();
+
+
+
+  //path to copy the certificate
+  networkConfig.certPath = __dirname + "/src/" + networkConfig.config.deployRequest.chaincodePath
+  + "/certificate.pem";
+  // Read and process the credentials.json
+  try {
+    networkConfig.network = JSON.parse(fs.readFileSync(__dirname + '/ServiceCredentials.json', 'utf8'));
+    if (networkConfig.network.credentials) network = networkConfig.network.credentials;
+  } catch (err) {
+    console.log("ServiceCredentials.json is missing or invalid file, Rerun the program with right file")
+    process.exit();
+  }
+
+  networkConfig.peers = networkConfig.network.peers;
+  networkConfig.users = networkConfig.network.users;
+
+  setup();
+  //
+  printNetworkDetails();
   // //Check if chaincode is already deployed
   // //TODO: Deploy failures aswell returns chaincodeID, How to address such issue?
   if (fileExists(chaincodeIDPath)) {
@@ -57,6 +75,16 @@ function initNetwork() {
     networkConfig.chaincodeID = fs.readFileSync(chaincodeIDPath, 'utf8');
   }
   console.log("\nFound chaincodeID " + networkConfig.chaincodeID );
+
+  //     chain.getUser(newUserName, function(err, user) {
+  //         if (err) throw Error(" Failed to register and enroll " + deployerName + ": " + err);
+  //         userObj = user;
+  //         // invoke();
+  //         enrollAndRegisterUsers();
+  //     });
+  // } else {
+  //     enrollAndRegisterUsers();
+  // }
 }
 
 
@@ -70,35 +98,65 @@ function initNetwork() {
 
 
 function setup() {
-  // Configure the KeyValStore which is used to store sensitive keys
-  // as so it is important to secure this storage.
-  // The FileKeyValStore is a simple file-based KeyValStore, but you
-  // can easily implement your own to store whereever you want.
-  networkConfig.chain.setKeyValStore( hfc.newFileKeyValStore(__dirname+'/tmp/keyValStore') );
-  // Set the URL for member services
-  networkConfig.chain.setMemberServicesUrl("grpc://172.17.0.1:7054");
-  // Add a peer's URL to send the requests to
-  networkConfig.chain.addPeer("grpc://172.17.0.1:9051");
-  networkConfig.chain.eventHubConnect("grpc://172.17.0.1:9053");
+  // Determining if we are running on a startup or HSBN network based on the url
+  // of the discovery host name.  The HSBN will contain the string zone.
+  var isHSBN = networkConfig.peers[0].discovery_host.indexOf('secure') >= 0 ? true : false;
+  var network_id = Object.keys(networkConfig.network.ca);
+  networkConfig.caUrl = "grpcs://"
+  + networkConfig.network.ca[network_id].discovery_host + ":"
+  + networkConfig.network.ca[network_id].discovery_port;
+
+  // Configure the KeyValStore which is used to store sensitive keys.
+  // This data needs to be located or accessible any time the users enrollmentID
+  // perform any functions on the blockchain.  The users are not usable without
+  // This data.
+  var uuid = network_id[0].substring(0, 8);
+  networkConfig.chain.setKeyValStore(hfc.newFileKeyValStore(__dirname + '/keyValStore-' + uuid));
+
+  if (isHSBN) {
+    networkConfig.certFile = '0.secure.blockchain.ibm.com.cert';
+  }
+  fs.createReadStream(networkConfig.certFile).pipe(fs.createWriteStream(networkConfig.certPath));
+  var cert = fs.readFileSync(networkConfig.certFile);
+
+  networkConfig.chain.setMemberServicesUrl(networkConfig.caUrl, {
+    pem: cert
+  });
+
+  networkConfig.peerUrls = [];
+  networkConfig.eventUrls = [];
+  // Adding all the peers to blockchain
+  // this adds high availability for the client
+  for (var i = 0; i < networkConfig.peers.length; i++) {
+    // Peers on Bluemix require secured connections, hence 'grpcs://'
+    networkConfig.peerUrls.push("grpcs://" + networkConfig.peers[i].discovery_host + ":" + networkConfig.peers[i].discovery_port);
+    networkConfig.chain.addPeer(networkConfig.peerUrls[i], {
+      pem: cert
+    });
+    networkConfig.eventUrls.push("grpcs://" + networkConfig.peers[i].event_host + ":" + networkConfig.peers[i].event_port);
+    networkConfig.chain.eventHubConnect(networkConfig.eventUrls[0], {
+      pem: cert
+    });
+  }
+  networkConfig.newUserName = networkConfig.config.user.username;
+  // Make sure disconnect the eventhub on exit
   process.on('exit', function() {
-    chain.eventHubDisconnect();
+    networkConfig.chain.eventHubDisconnect();
   });
 }
 
-function setupSinglePeer() {
-  // Configure the KeyValStore which is used to store sensitive keys
-  // as so it is important to secure this storage.
-  // The FileKeyValStore is a simple file-based KeyValStore, but you
-  // can easily implement your own to store whereever you want.
-  networkConfig.chain.setKeyValStore( hfc.newFileKeyValStore(__dirname+'/tmp/keyValStore') );
-  // Set the URL for member services
-  networkConfig.chain.setMemberServicesUrl("grpc://172.17.0.1:7054");
-  // Add a peer's URL to send the requests to
-  networkConfig.chain.addPeer("grpc://172.17.0.1:7051");
-  networkConfig.chain.eventHubConnect("grpc://172.17.0.1:7053");
-  process.on('exit', function() {
-    chain.eventHubDisconnect();
-  });
+function printNetworkDetails() {
+  console.log("\n------------- ca-server, peers and event URL:PORT information: -------------");
+  console.log("\nCA server Url : %s\n", networkConfig.caUrl);
+  for (var i = 0; i < networkConfig.peerUrls.length; i++) {
+    console.log("Validating Peer%d : %s", i, networkConfig.peerUrls[i]);
+  }
+  console.log("");
+  for (var i = 0; i < networkConfig.eventUrls.length; i++) {
+    console.log("Event Url on Peer%d : %s", i, networkConfig.eventUrls[i]);
+  }
+  console.log("");
+  console.log('-----------------------------------------------------------\n');
 }
 
 
@@ -113,12 +171,12 @@ function enrollAndRegisterUsers(userName,enrollAttr) {
       // Enroll a 'admin' who is already registered because it is
       // listed in fabric/membersrvc/membersrvc.yaml with it's one time password.
       // console.log("will enroll admin with " + networkConfig.users[0].enrollId + " and " + networkConfig.users[0].enrollSecret)
-      networkConfig.chain.enroll("admin", "Xurw3yU9zI0l", function(err, admin) {
+      networkConfig.chain.enroll(networkConfig.users[0].enrollId,
+        networkConfig.users[0].enrollSecret, function(err, admin) {
           if (err) reject("\nERROR: failed to enroll admin : " + err) ;
           // throw Error("\nERROR: failed to enroll admin : " + err);
 
-          console.log("\nEnrolled admin sucecssfully with attributes");
-          console.log(enrollAttr);;
+          console.log("\nEnrolled admin sucecssfully");
 
           // Set this user as the chain's registrar which is authorized to register other users.
           networkConfig.chain.setRegistrar(admin);
@@ -128,7 +186,7 @@ function enrollAndRegisterUsers(userName,enrollAttr) {
 
           var registrationRequest = {
             enrollmentID: userName,
-            affiliation: "bank_a",
+            affiliation: networkConfig.config.user.affiliation,
             attributes: enrollAttr
           };
 
