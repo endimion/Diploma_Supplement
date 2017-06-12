@@ -1,8 +1,10 @@
+'use strict';
 
 const express = require('express');
 const router = express.Router()
-
-
+const request = require('request');
+// Generate a v1 UUID (time-based)
+const uuid = require('uuid/v1');
 
 
 // define the home page route
@@ -91,11 +93,61 @@ router.get('/logout',(req,res) =>{
     if(err) {
       console.log(err);
     } else {
-      res.redirect('/login');
+      res.redirect('/login/eIDAS');
     }
   });
+});
+
+
+router.get('/eIDAS', function (req, res) {
+  if(!req.session.userType  && !req.session.eID){
+    res.render('loginEIDAS',{ title: 'Login with eIDAS',
+              message: 'Login to the DiplomaSupplement System using the eIDAS system',
+              token: uuid() });
+    // res.redirect(303,
+    //       "http://community.mastihawonder.com:8080/testISSsp-0.0.1-SNAPSHOT/login?sp=7&country=GR");
+  }
+});
+
+
+
+//TODO do not leave the url hardcoded
+router.get('/authenticate/:token',(req,res) =>{
+    let token = req.params.token;
+    let siteURL = 'http://community.mastihawonder.com:8080/testISSsp-0.0.1-SNAPSHOT/'
+                    +'user?token=' + token;
+    console.log("/autheticate/token/"+token);
+
+    let userDetails ;
+    request.get(siteURL,function (error, response, body) {
+        try{
+          userDetails = JSON.parse(body);
+        }catch(err){
+          if(!error) error =err;
+        }
+
+        if (!error && response.statusCode == 200) {
+              // console.log(body)
+              // let userDetails = JSON.parse(body);
+              req.session.eID = userDetails.eid;
+              req.session.userType = 'Student';
+              req.session.userName = userDetails.userName;
+              res.render('stdMainView',{ title: 'Manage Your Diploma Supplements',
+              message: 'Welcome user: ' + req.session.userName ,
+              stdId: req.session.eID,
+              userName: req.session.userName});
+
+          }else{
+              // console.log("Error with GET REQUEST at " + siteURL)
+              res.render('errorMessage',{ title: 'Ooops... an error occured!',
+                          message: error,
+                          stdId: req.session.eID});
+          }
+      });
 
 });
+
+
 
 
 module.exports = router

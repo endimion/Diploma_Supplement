@@ -1,6 +1,5 @@
 extends layout
 
-
 block content
   .main.container
     .row
@@ -10,7 +9,4 @@ block content
       .col.l12.md12.col-md-offset-3
         div.col-m-12=message
     .row
-      .col.l6.m6.col-md-offset-3
-        a.btn.btn-primary(href="/supplement/view") Manage Supplements 
-      .col.l6.m6.col-md-offset-3
-        a.btn.btn-primary(href="/login/logout") logout
+      a.btn.btn-primary(href=" http://84.205.248.180/ISSPlus/ValidateToken?t="+token+"&sp=sp1&cc=CA&saml=eIDAS") Login 

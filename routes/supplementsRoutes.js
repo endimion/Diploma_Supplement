@@ -41,7 +41,9 @@ router.post('/publish',(req,res) =>{
       }
   })
   .catch( err => {
-       res.send(err);
+    res.render('errorMessage',{ title: 'Ooops... an error occured!',
+                message: err.toString(),
+                stdId: req.session.eID});
   });
 });
 
