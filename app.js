@@ -32,7 +32,7 @@ app.use(session({
 
 app.use(timeout(120000));
 
-app.use('/',viewRouters);
+app.use('/',loginRoutes);
 app.use('/login',loginRoutes);
 app.use('/supplement',supplementRoutes);
 app.use('/qr',qr);

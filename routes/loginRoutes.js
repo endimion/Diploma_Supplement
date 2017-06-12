@@ -11,8 +11,10 @@ const uuid = require('uuid/v1');
 router.get('/', function (req, res) {
   // res.send('Hello World from login');
   if(!req.session.userType  && !req.session.eID){
-    res.render('login',{ title: 'Login', message: 'Login to the DiplomaSupplement WebApp' });
-  }else{
+    // res.render('login',{ title: 'Login', message: 'Login to the DiplomaSupplement WebApp' });
+    res.render('landing',{ title: 'Login', message: 'Login to the DiplomaSupplement WebApp' });
+
+}else{
     if(req.session.userType === 'University'){
       res.render('univMainView',{ title: 'University Management Page',
       message: 'Welcome user: ' + req.session.eID ,
