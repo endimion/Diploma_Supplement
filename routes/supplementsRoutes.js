@@ -10,6 +10,7 @@ const supUtils = require('../utils/SupplementUtils.js');
 const emailHelper = require('../utils/emailClient.js');
 const srvUtils = require('../utils/serverUtils.js');
 const hfcService = require('../service/HfcService');
+const uuid = require('uuid/v1');
 
 router.get('/publish',(req,res) =>{
 
@@ -21,41 +22,20 @@ router.get('/publish',(req,res) =>{
 
 
 
-router.post('/publish',(req,res) =>{
-  let owner = req.body.owner;
-  let university = req.body.university;
-  let _id = req.body.id;
-  hfcService.publishSupplement(owner,university,_id)
-  .then( result => {
-      //  res.send(result);
-      if(req.session.userType === 'University'){
-        res.render('univMainView',{ title: 'University Management Page',
-        message: 'Welcome user: ' + req.session.eID  + ".\n Supplement Published Successfully!!",
-        university: req.session.eID});
-      }else{
-        if(req.session.userType === 'Student'){
-          res.render('stdMainView',{ title: 'Publish a new Diploma Supplement',
-          message: 'Welcome user: ' + req.session.eID ,
-          stdId: req.session.eID});
-        }
-      }
-  })
-  .catch( err => {
-    res.render('errorMessage',{ title: 'Ooops... an error occured!',
-                message: err.toString(),
-                stdId: req.session.eID});
-  });
-});
+
 
 
 
 router.get('/view',(req,res) =>{
     let userEid = req.session.eID;
     let userType =  req.session.userType;
+    console.log("\nSupplementsRouts.js /view :: userEid" +userEid );
+    console.log("\nSupplementsRouts.js /view :: userType" +userType );
+
     hfcService.getSupplements(userEid,userType)
     .then(result => {
       res.render('viewSupplements',{ title: 'Published Supplements',
-            message: 'Welcome user: ' + req.session.eID , userType: req.session.userType,
+            message: 'Welcome user: ' + req.session.userName  , userType: req.session.userType,
             supplements: result});
     })
     .catch(err =>{
@@ -70,53 +50,23 @@ router.get('/view',(req,res) =>{
 
 
 
-// router.get('/edit/:supId',(req,res) =>{
-//   let supId = req.params.supId;
-//   let userName = req.session.eID;
-//   let _args = [supId];
-//   let _enrollAttr = [{name:'typeOfUser',value:req.session.userType},{name:"eID",value:req.session.eID}];
-//   let _qAttr = ['typeOfUser','eID'];
-//
-//   let getSupsById = new chainCodeQuery(_qAttr, _args, basic.config.chaincodeID,"getSupplementById",basic.query);
-//   let getSupsByIdBound = getSupsById.makeQuery.bind(getSupsById);
-//
-//
-//   let tryToGetSupplement = (function(){
-//     let counter = 0;
-//
-//
-//     return function(){
-//       basic.enrollAndRegisterUsers(userName,_enrollAttr)
-//       .then(getSupsByIdBound)
-//       .then(response =>{
-//         console.log("\nthe result is" + response);
-//         counter = 10;
-//         // res.send(JSON.parse(response));
-//         let supplement = JSON.parse(response);
-//         // process.exit(0);
-//         res.render('editSupplement',{ title: 'Edit Supplement',
-//         message: 'Welcome user: ' + req.session.eID , userType: req.session.userType,
-//         supplement: supplement});
-//       })
-//       .catch(err =>{
-//         console.log("AN ERROR OCCURED!!! atempt:"+counter+"\n");
-//         console.log(err);
-//         if(counter < 10){
-//           counter ++;
-//           tryToGetSupplement();
-//         }else{
-//           res.send("failed, to get  supplement after " + counter + " attempts");
-//         }
-//       });
-//     }
-//
-//
-//   })();
-//   tryToGetSupplement();
-//
-//
-//   // res.send(supId);
-// });
+router.get('/edit/:supId',(req,res) =>{
+  let supId = req.params.supId;
+  let userEid = req.session.eID;
+  let userType =  req.session.userType;
+  console.log("\nsupplemenstRoutes:: /edit/supId " + supId + " " + userEid + " "+ userType);
+  hfcService.getSupplementById(supId,userEid,userType)
+  .then(result => {
+          res.render('editSupplement',{ title: 'Edit Supplement',
+                message: 'Welcome user: ' + req.session.userName  , userType: req.session.userType,
+                supplement: result});
+  })
+  .catch(err =>{
+    res.render('errorMessage',{ title: 'Ooops... an error occured!',
+                message: err.toString(),
+                stdId: req.session.eID});
+  });
+});
 
 
 
@@ -138,9 +88,14 @@ router.get('/view/:dsHash',(req,res) =>{
                         stdId: req.session.eID});
       });
   }else{
-    res.render('loginAndRedirect',{ title: 'Login',
-    message: 'Login to View Supplement',
-    supId: dsHash});
+    // res.render('loginAndRedirect',{ title: 'Login',
+    // message: 'Login to View Supplement',
+    // supId: dsHash});
+    res.render('loginEIDAS',{ title: 'Login with eIDAS',
+    message: 'Login with the eIDAS system to view this Diploma Supplement',
+    token: uuid() });
+
+
   }
 });
 

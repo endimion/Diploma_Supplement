@@ -114,7 +114,10 @@ function enrollAndRegisterUsers(userName,enrollAttr) {
       // listed in fabric/membersrvc/membersrvc.yaml with it's one time password.
       // console.log("will enroll admin with " + networkConfig.users[0].enrollId + " and " + networkConfig.users[0].enrollSecret)
       networkConfig.chain.enroll("admin", "Xurw3yU9zI0l", function(err, admin) {
-          if (err) reject("\nERROR: failed to enroll admin : " + err) ;
+          if (err){
+             console.log("\nERROR: failed to enroll admin : " + err) ;
+             reject(err) ;
+          }
           // throw Error("\nERROR: failed to enroll admin : " + err);
 
           console.log("\nEnrolled admin sucecssfully with attributes");
@@ -184,6 +187,7 @@ function deployChaincodeWithParams(userObj,deployReq) {
       console.log("\nChaincode ID : " + chaincodeID);
       console.log(util.format("\nSuccessfully deployed chaincode: request=%j, response=%j", deployReq, results));
       // Save the chaincodeID
+      console.log("will write at " + chaincodeIDPath + " the id " + chaincodeID);
       fs.writeFileSync(chaincodeIDPath, chaincodeID);
       //invoke();
       resolve(results);

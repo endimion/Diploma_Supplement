@@ -51,6 +51,25 @@ exports.getSupplements = function(userEid, userType){
 };
 
 
+exports.getSupplementById = function(supId, userEid,userType){
+  return new Promise(function(resolve,reject){
+    let queryArgs = [supId];
+    // let userName = req.session.eID;
+    let _enrollAttr = [{name:'typeOfUser',value: userType},{name:"eID",value:userEid}];
+    let queryAttributes = ['typeOfUser','eID'];
+    let testQ2 = new chainCodeQuery(queryAttributes, queryArgs, basic.config.chaincodeID,"getSupplementById",basic.query);
+    let testQfunc2 = testQ2.makeQuery.bind(testQ2);
+    let success = function(response){
+      resolve(JSON.parse(response));
+    };
+    // let enrollUser = basic.enrollAndRegisterUsers(userEid,_enrollAttr);
+
+    let tryToGetSupplements = makeHfcCall(testQfunc2,10,success,reject,userEid,_enrollAttr);
+    tryToGetSupplements();
+  });
+};
+
+
 
 
 exports.getSupplementByHash = function(userEid, dsHash,userType){

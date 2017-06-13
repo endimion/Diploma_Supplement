@@ -15,10 +15,12 @@ process.env.GOPATH = __dirname;
 //      var hfc = require('hfc');
 var hfc = require('hfc');
 var util = require('util');
-
+var fs = require('fs');
 // Create a client chain.
 // The name can be anything as it is only used internally.
 var chain = hfc.newChain("targetChain");
+
+var chaincodeIDPath = __dirname + "/chaincodeIDLocalHost";
 
 // Configure the KeyValStore which is used to store sensitive keys
 // as so it is important to secure this storage.
@@ -201,7 +203,7 @@ function enrollAndRegisterUsers(userName,enrollAttr) {
         console.log("\nChaincode ID : " + chaincodeID);
         console.log(util.format("\nSuccessfully deployed chaincode: request=%j, response=%j", deployReq, results));
         // Save the chaincodeID
-        // fs.writeFileSync(chaincodeIDPath, chaincodeID);
+        fs.writeFileSync(chaincodeIDPath, chaincodeID);
         //invoke();
         resolve(results);
       });

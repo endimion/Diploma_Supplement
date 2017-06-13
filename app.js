@@ -24,6 +24,7 @@ app.use(express.static('public'));
 app.use(bodyParser.json()); // support json encoded bodies
 app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
 app.use(session({
+  name: 'clientAppCookie',
   secret: 'keyboard cat',
   resave: false,
   saveUninitialized: true,

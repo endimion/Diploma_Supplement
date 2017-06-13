@@ -31,6 +31,8 @@ type SimpleChaincode struct {
 //Diploma Suplement Structure
 type DiplomaSupplement struct {
 	Owner string
+	Name string
+	Surname string
 	University string
 	Authorized []string
 	Id string
@@ -69,6 +71,12 @@ type Assets struct{
 	Universities []string
 	DiplomaSupplementMap map[string]DiplomaSupplementMap
 }
+
+type AuthorizedUser struct{
+	Email string
+	Eid   string
+}
+
 
 var EVENT_COUNTER = "event_counter"
 
@@ -332,7 +340,11 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 				// args[0] the DiplomaSupplement JSON string
 				func (t *SimpleChaincode) publish(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 					if len(args) != 1 {
-						return nil, errors.New("Incorrect number of arguments. Expecting 1")
+						tosend := "Incorrect number of arguments. Expecting 1" + "." + stub.GetTxID()
+						err := stub.SetEvent("evtsender", []byte(tosend))
+						if err != nil {
+							return nil, err
+						}
 					}
 
 
@@ -350,8 +362,11 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 						//get the assets from the state
 						assetBytes, err := stub.GetState("assets")
 						if err != nil {
-							jsonResp := "{\"Error\":\"Failed to get state for key \"assets\"}"
-							return nil, errors.New(jsonResp)
+							tosend := "{\"Error\":\"Failed to get state for key \"assets\"}" + "." + stub.GetTxID()
+							err = stub.SetEvent("evtsender", []byte(tosend))
+							if err != nil {
+								return nil, err
+							}
 						}
 						assets := Assets{}
 						json.Unmarshal([]byte(assetBytes), &assets)
@@ -363,11 +378,19 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 						//update the state with the new assets
 						encodedAssets,err  := json.Marshal(assets)
 						if err != nil {
-							return nil, err
+							tosend := "Could not  marshal assets" + "." + stub.GetTxID()
+							err = stub.SetEvent("evtsender", []byte(tosend))
+							if err != nil {
+								return nil, err
+							}
 						}
 						err = stub.PutState("assets", []byte(encodedAssets))
 						if err != nil {
-							return nil, err
+							tosend := "Could not place assets back in the state" + "." + stub.GetTxID()
+							err = stub.SetEvent("evtsender", []byte(tosend))
+							if err != nil {
+								return nil, err
+							}
 						}
 						//Execution of chaincode finished successfully
 						tosend := "Tx chaincode finished OK." + stub.GetTxID()
