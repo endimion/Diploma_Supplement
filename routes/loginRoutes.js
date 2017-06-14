@@ -96,7 +96,7 @@ router.get('/logout',(req,res) =>{
     if(err) {
       console.log(err);
     } else {
-      res.  res.redirect(303,"/supplement/view/"+supId);('/');
+      res.redirect(303,"/supplement/view/"+supId);
     }
   });
 });
@@ -104,12 +104,12 @@ router.get('/logout',(req,res) =>{
 
 router.get('/eIDAS', function (req, res) {
   if(!req.session.userType  && !req.session.eID){
-    res.render('loginEIDAS',{ title: 'Login with eIDAS',
-    message: 'Login to the DiplomaSupplement System using the eIDAS system',
-    token: uuid() });
-    // res.  res.redirect(303,"/supplement/view/"+supId);(303,
-    //       "http://community.mastihawonder.com:8080/testISSsp-0.0.1-SNAPSHOT/login?sp=7&country=GR");
-  }
+    // res.render('loginEIDAS',{ title: 'Login with eIDAS',
+    // message: 'Login to the DiplomaSupplement System using the eIDAS system',
+    // token: uuid() });
+
+    res.redirect(303, "http://84.205.248.180/ISSPlus/ValidateToken?t="+ uuid()+"&sp=sp1&cc=CA&saml=eIDAS");
+}
 });
 
 

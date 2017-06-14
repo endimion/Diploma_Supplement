@@ -13,3 +13,4 @@ resources/emailCredentials
 tmp
 /tmp
 chaincodeIDLocalHost
+tmp/keyValStore-*
