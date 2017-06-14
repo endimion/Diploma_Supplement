@@ -11,3 +11,5 @@ chaincodeID
 /resources/emailCredentials
 resources/emailCredentials
 tmp
+/tmp
+chaincodeIDLocalHost
