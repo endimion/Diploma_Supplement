@@ -85,7 +85,7 @@ router.post('/loginAndRedirect',(req,res)=>{
       res.send("wrong username password combination")
     }
   }
-  res.redirect(303,"/supplement/view/"+supId);
+  res.  res.redirect(303,"/supplement/view/"+supId);(303,"/supplement/view/"+supId);
 });
 
 
@@ -96,7 +96,7 @@ router.get('/logout',(req,res) =>{
     if(err) {
       console.log(err);
     } else {
-      res.redirect('/');
+      res.  res.redirect(303,"/supplement/view/"+supId);('/');
     }
   });
 });
@@ -107,7 +107,7 @@ router.get('/eIDAS', function (req, res) {
     res.render('loginEIDAS',{ title: 'Login with eIDAS',
     message: 'Login to the DiplomaSupplement System using the eIDAS system',
     token: uuid() });
-    // res.redirect(303,
+    // res.  res.redirect(303,"/supplement/view/"+supId);(303,
     //       "http://community.mastihawonder.com:8080/testISSsp-0.0.1-SNAPSHOT/login?sp=7&country=GR");
   }
 });
@@ -140,10 +140,16 @@ router.get('/authenticate/:token',(req,res) =>{
       req.session.eID = hash.sha256().update(userDetails.eid).digest('hex');
       req.session.userType = 'Student';
       req.session.userName = userDetails.userName;
-      res.render('stdMainView',{ title: 'Manage Your Diploma Supplements',
-      message: 'Welcome user: ' + req.session.userName ,
-      eID: req.session.eID,
-      userName: req.session.userName});
+      let cookie = req.cookies.dsHash;
+      if (cookie === undefined)
+      {
+        res.render('stdMainView',{ title: 'Manage Your Diploma Supplements',
+        message: 'Welcome user: ' + req.session.userName ,
+        eID: req.session.eID,
+        userName: req.session.userName});
+      }else{
+        res.redirect(303,"/supplement/view/"+cookie);
+      }
 
     }else{
       // console.log("Error with GET REQUEST at " + siteURL)

@@ -12,7 +12,7 @@ const qr = require('./routes/qrCodeRoutes');
 const srvUtils = require('./utils/serverUtils.js');
 const basic = require('./basicFunctions');
 const timeout = require('connect-timeout');
-
+const cookieParser = require('cookie-parser')
 
 // view engine setup
 app.set('views', path.join(__dirname,'views'));
@@ -23,6 +23,7 @@ app.use(express.static('public'));
 // instruct the app to use the `bodyParser()` middleware for all routes
 app.use(bodyParser.json()); // support json encoded bodies
 app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
+app.use(cookieParser());
 app.use(session({
   name: 'clientAppCookie',
   secret: 'keyboard cat',

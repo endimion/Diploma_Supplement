@@ -91,6 +91,7 @@ router.get('/view/:dsHash',(req,res) =>{
     // res.render('loginAndRedirect',{ title: 'Login',
     // message: 'Login to View Supplement',
     // supId: dsHash});
+    res.cookie('dsHash',dsHash,{ maxAge: 900000, httpOnly: true });
     res.render('loginEIDAS',{ title: 'Login with eIDAS',
     message: 'Login with the eIDAS system to view this Diploma Supplement',
     token: uuid() });

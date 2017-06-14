@@ -14,21 +14,22 @@ block content
         .card
           .card-content#textContent
             span.card-title Supplement #{supplement.Id}
-            p Owner:  #{supplement.Owner}
+            p Alumni: #{supplement.Name} #{supplement.Surname}
+            p(style="word-break: break-all;") eID:  #{supplement.Owner}
             p University:#{supplement.University}
-            p Authorized Users:
             .card
               .card-content#textContent
                 span.card-title 
+                p Email Accounts supplement has been shared with:  
                 ul  
                   each val in supplement.Authorized
-                    li #{val}
+                    li #{val.Email}
                 a.btn.btn-primary(href="/supplement/view") Save
-                a.btn.btn-primary(href="/login") Cancel
+                a.btn.btn-primary(href="/supplement/view") Cancel
                 
     .row
       .col.l6.m6.col-md-offset-3
-        a.btn.btn-primary(href="/login") Back 
+        a.btn.btn-primary(href="/supplement/view") Back 
 
 
   script
