@@ -16,7 +16,7 @@ block content
             .card-content#textContent
               span.card-title
               p Alumni: #{val.Name} #{val.Surname}
-              p eID:  #{val.Owner}
+              p(style="word-break: break-all;") eID:  #{val.Owner}
               p University:#{val.University}
               p ID: #{val.Id}
             .card-content(id="svgContent"+val.Id style={display: 'none', background: 'white',width:'16em'})    

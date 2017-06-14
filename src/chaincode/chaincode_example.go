@@ -34,7 +34,7 @@ type DiplomaSupplement struct {
 	Name string
 	Surname string
 	University string
-	Authorized []string
+	Authorized []AuthorizedUser
 	Id string
 }
 
@@ -313,7 +313,7 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 				}	else{
 					for _,element := range authorizedUsers {
 						// element is the element from someSlice for where we are
-						if eidString == element {
+						if eidString == element.Eid {
 							isAllowed = true
 						}
 					}
@@ -549,7 +549,8 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 												return nil, err
 											}
 										}
-										supToUpdate.Authorized = append(supToUpdate.Authorized,recepientEid)
+										authorizedUserEntry  := AuthorizedUser{Email:dsMap.Email, Eid: recepientEid}
+										supToUpdate.Authorized = append(supToUpdate.Authorized,authorizedUserEntry)
 										//delete the old version of the supplement
 										supplementSlice = removeFromSlice(supplementSlice,position)
 										//add the new supplement
@@ -659,14 +660,14 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 									// Updates a DiplomaSupplement, passed by its id, (args[0]) such that
 									// it can be viewed by the user args[1]
 									func (t *SimpleChaincode) addAuthorizedUser(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
-										if len(args) != 2 {
+										if len(args) != 3 {
 											return nil, errors.New("Incorrect number of arguments. Expecting 2")
 										}
 										//the DiplomaSupplement id
 										suplementId := args[0]
 										//the user that should be allowed to view the supplement
 										newUser := args[1]
-
+										email := args[2]
 
 										//get the assets from the state
 										assetBytes, err := stub.GetState("assets")
@@ -692,7 +693,8 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 
 										if isStudent && isOwner{
 
-											supToUpdate.Authorized = append(supToUpdate.Authorized,newUser)
+											authorizedUserEntry := AuthorizedUser{Email: email, Eid : newUser }
+											supToUpdate.Authorized = append(supToUpdate.Authorized,authorizedUserEntry)
 
 											//delete the old version of the supplement
 											supplementSlice = removeFromSlice(supplementSlice,position)
