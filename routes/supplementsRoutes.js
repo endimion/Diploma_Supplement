@@ -11,8 +11,10 @@ const emailHelper = require('../utils/emailClient.js');
 const srvUtils = require('../utils/serverUtils.js');
 const hfcService = require('../service/HfcService');
 const uuid = require('uuid/v1');
+const sessionUtil = require('../utils/RooterUtils');
+const sessionCheck = sessionUtil.checkSessionEidandType;
 
-router.get('/publish',(req,res) =>{
+router.get('/publish',sessionCheck,(req,res) =>{
 
   res.render('publishSupplementView',{ title: 'Publish a new Diploma Supplement',
   message: 'Welcome user: ' + req.session.eID ,
@@ -26,7 +28,7 @@ router.get('/publish',(req,res) =>{
 
 
 
-router.get('/view',(req,res) =>{
+router.get('/view',sessionCheck,(req,res) =>{
     let userEid = req.session.eID;
     let userType =  req.session.userType;
     console.log("\nSupplementsRouts.js /view :: userEid" +userEid );
@@ -50,7 +52,7 @@ router.get('/view',(req,res) =>{
 
 
 
-router.get('/edit/:supId',(req,res) =>{
+router.get('/edit/:supId',sessionCheck,(req,res) =>{
   let supId = req.params.supId;
   let userEid = req.session.eID;
   let userType =  req.session.userType;

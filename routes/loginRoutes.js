@@ -109,7 +109,7 @@ router.get('/eIDAS', function (req, res) {
     // token: uuid() });
 
     res.redirect(303, "http://84.205.248.180/ISSPlus/ValidateToken?t="+ uuid()+"&sp=sp1&cc=CA&saml=eIDAS");
-}
+  }
 });
 
 

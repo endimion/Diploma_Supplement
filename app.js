@@ -33,7 +33,6 @@ app.use(session({
 })); //set up middleware for session handling
 
 app.use(timeout(120000));
-
 app.use('/',loginRoutes);
 app.use('/login',loginRoutes);
 app.use('/supplement',supplementRoutes);
