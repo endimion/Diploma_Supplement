@@ -52,8 +52,8 @@ const server = app.listen(port,"127.0.0.1", (err,res) => {
     console.log("Example app listening at http://%s:%s", host, port)
     console.log("server started");
     //initialize the blocokchain configuration
-    srvUtils.address = host;
-    srvUtils.port = port;
+    console.log("SRV address"+ srvUtils.address);
+    srvUtils.address = process.env.SRV_ADDR;
     // console.log(srvUtils.address);
     basic.init();
   }
