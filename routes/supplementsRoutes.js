@@ -49,7 +49,7 @@ router.get('/view',sessionCheck,(req,res) =>{
     })
     .catch(err =>{
       res.render('errorMessage',{ title: 'Ooops... an error occured!',
-                  message: err?err.toString()|err,
+                  message: err?err.toString()||err,
                   stdId: req.session.eID});
     });
 });
