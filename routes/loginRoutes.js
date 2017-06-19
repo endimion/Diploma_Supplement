@@ -91,7 +91,7 @@ router.post('/loginAndRedirect',(req,res)=>{
       res.send("wrong username password combination")
     }
   }
-  res.  res.redirect(303,"/supplement/view/"+supId);(303,"/supplement/view/"+supId);
+   res.redirect(303,"/supplement/view/"+supId);
 });
 
 
@@ -152,6 +152,8 @@ router.get('/authenticate/:token',(req,res) =>{
       let cookie = req.cookies.dsHash;
       if (cookie === undefined)
       {
+        // console.log(req.session);
+
         res.render('stdMainView',{ title: 'Manage Your Diploma Supplements',
         message: 'Welcome user: ' + req.session.userName ,
         eID: req.session.eID,
