@@ -23,8 +23,10 @@ block content
                 p Email Accounts supplement has been shared with:  
                 ul  
                   each val in supplement.Authorized
-                    li #{val.Email}
-                a.btn.btn-primary(href="/supplement/view") Save
+                    li 
+                      | #{val.Email} 
+                      i.material-icons(style= "margin-left:0.1em;") cancel
+                a.btn.btn-primary(href="/supplement/view", style ="margin-right:0.1em;") Save
                 a.btn.btn-primary(href="/supplement/view") Cancel
                 
     .row
