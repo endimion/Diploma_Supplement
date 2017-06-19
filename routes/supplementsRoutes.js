@@ -37,8 +37,13 @@ router.get('/view',sessionCheck,(req,res) =>{
     hfcService.getSupplements(userEid,userType)
     .then(result => {
       res.render('viewSupplements',{ title: 'Published Supplements',
-            message: 'Welcome user: ' + req.session.userName  , userType: req.session.userType,
-            supplements: result});
+            message: 'Welcome user: ' + req.session.userName  ,
+            userType: req.session.userType,
+            supplements: result,
+            eID: req.session.eID,
+            userName: req.session.userName,
+            firstName: req.session.firstName,
+            lastName: req.session.lastName});
     })
     .catch(err =>{
       res.render('errorMessage',{ title: 'Ooops... an error occured!',
@@ -60,8 +65,13 @@ router.get('/edit/:supId',sessionCheck,(req,res) =>{
   hfcService.getSupplementById(supId,userEid,userType)
   .then(result => {
           res.render('editSupplement',{ title: 'Edit Supplement',
-                message: 'Welcome user: ' + req.session.userName  , userType: req.session.userType,
-                supplement: result});
+                message: 'Welcome user: ' + req.session.userName  ,
+                userType: req.session.userType,
+                supplement: result,
+                eID: req.session.eID,
+                userName: req.session.userName,
+                firstName: req.session.firstName,
+                lastName: req.session.lastName});
   })
   .catch(err =>{
     res.render('errorMessage',{ title: 'Ooops... an error occured!',
@@ -194,7 +204,11 @@ router.get('/view/:dsHash',(req,res) =>{
               let supplement = JSON.parse(response);
               res.render('viewSingleSupplement',{ title: 'View Supplement',
               message: 'Welcome user: ' + req.session.eID , userType: req.session.userType,
-              supplement: supplement});
+              supplement: supplement,
+              eID: req.session.eID,
+              userName: req.session.userName,
+              firstName: req.session.firstName,
+              lastName: req.session.lastName});
             })
             .catch(err =>{
               console.log("AN ERROR OCCURED!!! atempt:"+counter+"\n");
@@ -216,7 +230,11 @@ router.get('/view/:dsHash',(req,res) =>{
       }else{
         res.render('loginAndRedirect',{ title: 'Login',
         message: 'Login to View Supplement',
-        supId: dsHash});
+        supId: dsHash,
+        eID: req.session.eID,
+        userName: req.session.userName,
+        firstName: req.session.firstName,
+        lastName: req.session.lastName});
       }
     });
 

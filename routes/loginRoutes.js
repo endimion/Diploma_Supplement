@@ -22,7 +22,10 @@ router.get('/', function (req, res) {
     if(req.session.userType === 'Student'){
       res.render('stdMainView',{ title: 'Publish a new Diploma Supplement',
       message: 'Welcome user: ' + req.session.eID ,
-      stdId: req.session.eID});
+      eID: req.session.eID,
+      userName: req.session.userName,
+      firstName: req.session.firstName,
+      lastName: req.session.lastName});
     }else{
       res.render('errorMessage',{ title: 'Ooops... an error occured!',
       message: "Unsupported type of user " +req.session.userType ,
@@ -53,7 +56,10 @@ router.post('/',(req,res) =>{
       req.session.eID = userName;
       res.render('stdMainView',{ title: 'Manage Your Diploma Supplements',
       message: 'Welcome user: ' + req.session.eID ,
-      eID: req.session.eID});
+      eID: req.session.eID,
+      userName: req.session.userName,
+      firstName: req.session.firstName,
+      lastName: req.session.lastName});
     }else{
       res.send("wrong username password combination")
 
@@ -96,7 +102,7 @@ router.get('/logout',(req,res) =>{
     if(err) {
       console.log(err);
     } else {
-      res.redirect(303,"/supplement/view/"+supId);
+      res.redirect(303,"/login");
     }
   });
 });
@@ -131,7 +137,8 @@ router.get('/authenticate/:token',(req,res) =>{
       if(!error) error =err;
     }
 
-    if (!error && response.statusCode == 200 && userDetails.userName && userDetails.eid) {
+    if (!error && req.session &&  userDetails
+          && response.statusCode == 200 && userDetails.userName && userDetails.eid) {
       // console.log(body)
       // let userDetails = JSON.parse(body);
       // req.session.eID = userDetails.eid;
@@ -140,20 +147,24 @@ router.get('/authenticate/:token',(req,res) =>{
       req.session.eID = hash.sha256().update(userDetails.eid).digest('hex');
       req.session.userType = 'Student';
       req.session.userName = userDetails.userName;
+      req.session.firstName = userDetails.firstName;
+      req.session.lastName = userDetails.lastName;
       let cookie = req.cookies.dsHash;
       if (cookie === undefined)
       {
         res.render('stdMainView',{ title: 'Manage Your Diploma Supplements',
         message: 'Welcome user: ' + req.session.userName ,
         eID: req.session.eID,
-        userName: req.session.userName});
+        userName: req.session.userName,
+        firstName: req.session.firstName,
+        lastName: req.session.lastName});
       }else{
         res.redirect(303,"/supplement/view/"+cookie);
       }
 
     }else{
       // console.log("Error with GET REQUEST at " + siteURL)
-      if(!userDetails.eid){error = "Session expried, please reauthenticate using eIDAS"}
+      if(!userDetails || !userDetails.eid){error = "Session expried, please reauthenticate using eIDAS"}
       res.render('errorMessage',{ title: 'Ooops... an error occured!',
       message: error,
       stdId: req.session.eID});
