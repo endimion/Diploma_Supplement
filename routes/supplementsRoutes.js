@@ -36,6 +36,8 @@ router.get('/view',sessionCheck,(req,res) =>{
 
     hfcService.getSupplements(userEid,userType)
     .then(result => {
+      console.log(req.session);
+
       res.render('viewSupplements',{ title: 'Published Supplements',
             message: 'Welcome user: ' + req.session.userName  ,
             userType: req.session.userType,
