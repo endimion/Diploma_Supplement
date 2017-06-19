@@ -91,7 +91,12 @@ router.get('/view/:dsHash',(req,res) =>{
       .then(result => {
             // console.log("\nersult \n") ;
             // console.log(result);
-            res.render(result.view,result);
+            let model  = result;
+            model.eID= req.session.eID;
+            model.userName= req.session.userName,
+            model.firstName= req.session.firstName,
+            model.lastName= req.session.lastName
+            res.render(result.view,model);
       })
       .catch(err =>{
             console.log(err);
