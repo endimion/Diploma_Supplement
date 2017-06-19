@@ -97,24 +97,24 @@ block content
       .col.l6.m6.col-md-offset-3
         a.btn.btn-primary(href="/login") Back 
 
-
-  script(type="text/javascript" src="http://canvg.github.io/canvg/rgbcolor.js")
-  script(type="text/javascript" src="http://canvg.github.io/canvg/StackBlur.js")
-  script(type="text/javascript" src="http://canvg.github.io/canvg/canvg.js")
-  script
-    include ../scripts/qrScript.js
-  script
-    include ../scripts/emailScript.js
-  script.
-    var onModalHide = function() {
-      $(".sendEmail").show();
-      $(".modalMessage").show();
-      $(".preloader").hide();
-      $(".qrCode").hide();
-      
-    };
-    $(document).ready(function(){
-        $('.modal').modal({
-            complete : onModalHide  
-        });
-    });
+  block scripts
+    script(type="text/javascript" src="http://canvg.github.io/canvg/rgbcolor.js")
+    script(type="text/javascript" src="http://canvg.github.io/canvg/StackBlur.js")
+    script(type="text/javascript" src="http://canvg.github.io/canvg/canvg.js")
+    script
+      include ../scripts/qrScript.js
+    script
+      include ../scripts/emailScript.js
+    script.
+      var onModalHide = function() {
+        $(".sendEmail").show();
+        $(".modalMessage").show();
+        $(".preloader").hide();
+        $(".qrCode").hide();
+        
+      };
+      $(document).ready(function(){
+          $('.modal').modal({
+              complete : onModalHide  
+          });
+      });
