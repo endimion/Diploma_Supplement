@@ -1,0 +1,49 @@
+<div class="navbar-fixed">
+  <nav>
+     <div class="nav-wrapper">
+       <a href="#!" class="brand-logo">UAgean Diploma Supplemenet</a>
+       <a href="#" data-activates="mobile-demo" class="button-collapse"><i class="material-icons">menu</i></a>
+       <ul class="right hide-on-med-and-down">
+         <li><a href="/supplement/view">Manage Supplements</a></li>
+         <li><a href="/supplement/request">Request new Supplement</a></li>
+         <li><a href="#" data-activates="slide-out" class="button-collapse show-on-large">Account</a></li>
+       </ul>
+     </div>
+  </nav>
+</div>
+<ul class="side-nav" id="mobile-demo">
+  <ul>
+    <li><a href="/supplement/view">View</a></li>
+    <li><a href="/supplement/request">Request</a></li>
+    <li><a href="#" data-activates="slide-out" class="button-collapse show-on-large">Account</a></li>
+  </ul>  
+</ul>
+<ul id="slide-out" class="side-nav">
+   <li>
+    <div class="userView">
+      <div class="background">
+         <img src="/img/office.jpg">
+      </div>
+       <a href="#!user"><img class="circle" src="/img/user.png"></a>
+       <a href="#!name">
+          span.white-text.name #{firstName} #{lastName}
+       </a>
+       <a href="#!email"> 
+          span.white-text.email #{email}
+       </a>
+    </div>
+   </li>
+    //-  <li><a href="#!"><i class="material-icons">cloud</i>First Link With Icon</a></li>
+    //-  <li><a href="<div class="divider"></div>#!">Second Link</a></li>
+    //-  <li><div class="divider"></div></li>
+    //-  <li><a class="subheader">Subheader</a></li>
+   <li>
+     a.grey-text.name(href="#!username") userName: #{userName}  
+   </li>  
+   <li>
+    a.grey-text.name(href="#!eid" style="width: 250px;white-space: nowrap;overflow: hidden;text-overflow: ellipsis;") 
+      | eID: #{eID}  
+   </li>  
+   <li><div class="divider"></div></li>
+   <li><a class="waves-effect" href="/login/logout">Logout</a></li>
+</ul>
