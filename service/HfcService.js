@@ -159,7 +159,7 @@ exports.shareSupplement = function(employerEmail,supId,userEid, userType){
     let _invAttr = ['typeOfUser','eID'];
     let addDSMapArgs = ['{"DSHash":"'+dsNonceHash+'", "DSId":"'+supId+'", "Email":"'+employerEmail+'", "Recipient":null}' ];
 
-    let emailBody = '<p>Click<a href="http://' + srvUtils.address + ':'+srvUtils.port+'/supplement/view/'
+    let emailBody = '<p>Click<a href="http://' + srvUtils.address + '/supplement/view/'
     +dsNonceHash +'"> here</a> to view the shared diploma supplement </p>';
 
     let addDSMapReq = {
