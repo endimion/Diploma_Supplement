@@ -173,7 +173,7 @@ function enrollAndRegisterUsers(userName,enrollAttr) {
             // userObj = user;
             //setting timers for fabric waits
             // chain.setDeployWaitTime(config.deployWaitTime);
-            chain.setDeployWaitTime(200);
+            chain.setDeployWaitTime(400);
             // networkConfig.chain.setInvokeWaitTime(60);
             // console.log("\nDeploying chaincode ...");
 
