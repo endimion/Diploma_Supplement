@@ -22,12 +22,17 @@ block content
                 span.card-title 
                 p Email Accounts supplement has been shared with:  
                 ul  
-                  each val in supplement.Authorized
-                    li 
-                      | #{val.Email} 
-                      i.material-icons(style= "margin-left:0.1em;") cancel
-                a.btn.btn-primary(href="/supplement/view", style ="margin-right:0.1em;") Save
-                a.btn.btn-primary(href="/supplement/view") Cancel
+                  each val, key in supplement.Authorized
+                    li(id=key) 
+                      i #{val.Email} 
+                      a
+                        i.material-icons(style= "margin-left:0.3em;margin-top:0.3em;cursor:pointer;"
+                                  onclick='removeUser("'+val.Email+'","'+key+'")') cancel
+                div.row
+                  div.col.s6.m6.l6
+                    a.btn.btn-primary(href="#", style ="margin-right:0.1em;" onclick='saveShareChanges(event)') Save
+                  div.col.s6.m6.l6
+                    a.btn.btn-primary(href="/supplement/view") Cancel
                 
     .row
       .col.l6.m6.col-md-offset-3
@@ -35,4 +40,6 @@ block content
 
   block scripts
     script
+      include ../scripts/editSupplement.js  
       include ../scripts/qrScript.js
+      
