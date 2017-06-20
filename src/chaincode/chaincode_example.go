@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	"crypto/rand"
+	"strings"
 
 )
 
@@ -124,6 +125,10 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 
 	if function == "genCodeForDSMap"{
 		return t.genCodeForDSMap(stub,args)
+	}
+
+	if function == "uninvite"{
+		return t.uninviteUsers(stub,args)
 	}
 
 	return nil, nil
@@ -334,8 +339,6 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 
 
 
-
-
 				// Puts a new DiplomaSupplement to the state
 				// args[0] the DiplomaSupplement JSON string
 				func (t *SimpleChaincode) publish(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
@@ -527,11 +530,11 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 							}
 							}else{
 								if dsMap.Code != emailedCode {
-										tosend := "Error, Wrong Authorization code!" +"." + stub.GetTxID()
-										err = stub.SetEvent("evtsender", []byte(tosend))
-										if err != nil {
-											return nil, err
-										}
+									tosend := "Error, Wrong Authorization code!" +"." + stub.GetTxID()
+									err = stub.SetEvent("evtsender", []byte(tosend))
+									if err != nil {
+										return nil, err
+									}
 									}else{
 										dsMap.Recipient = recepientEid
 										//update the assets and put them in the state
@@ -724,6 +727,98 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 									}
 
 
+									//takes as input the supplementID and
+									// a list of users that will be removed from the authorizedUsers
+									//of that supplement
+									func (t *SimpleChaincode) uninviteUsers(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+										if len(args) != 2 {
+											tosend := "Incorrect number of arguments. Expecting 2" + "." + stub.GetTxID()
+											err := stub.SetEvent("evtsender", []byte(tosend))
+											if err != nil {
+												return nil, err
+											}
+										}
+										//the DiplomaSupplement id
+										suplementId := args[0]
+										emailsString := args[1]
+										emailsArray := strings.Split(emailsString,";")
+
+										//get the assets from the state
+										assetBytes, err := stub.GetState("assets")
+										if err != nil {
+											// jsonResp := "{\"Error\":\"Failed to get state for key \"assets\"}"
+											tosend := "Failed to get state for key \"assets\"" + "." + stub.GetTxID()
+											err := stub.SetEvent("evtsender", []byte(tosend))
+											if err != nil {
+												return nil, err
+											}
+										}
+										//get the supplements from the assets
+										assets := Assets{}
+										json.Unmarshal([]byte(assetBytes), &assets)
+										supplementSlice := assets.Supplements
+
+										supToUpdate , position := findSupplementInSlice(supplementSlice, suplementId)
+										if position == -1 {
+											// return nil, errors.New("No supplement found with the given ID " + suplementId)
+											tosend := "No supplement found with the given ID"+suplementId+ "." + stub.GetTxID()
+											err := stub.SetEvent("evtsender", []byte(tosend))
+											if err != nil {
+												return nil, err
+											}
+										}
+
+
+										// Here the ABAC API is called to verify the attributes, only then will the
+										// supplement be updated
+										isStudent, _ := stub.VerifyAttribute("typeOfUser", []byte("Student"))
+										isOwner, _ := stub.VerifyAttribute("eID", []byte(supToUpdate.Owner))
+										if isStudent && isOwner{
+													// authorizedUsers := supToUpdate.Authorized
+													for _, mail := range emailsArray{
+														for index, authUser := range supToUpdate.Authorized {
+																if(mail == authUser.Email){
+																	supToUpdate.Authorized = removeAuthUserFromSlice(supToUpdate.Authorized,index)
+																	break
+																}
+														}
+													}
+													//delete the old version of the supplement
+													supplementSlice = removeFromSlice(supplementSlice,position)
+													//add the new supplement
+													supplementSlice = append(supplementSlice,supToUpdate)
+
+													assets.Supplements = supplementSlice
+
+													//update the state with the new assets
+													encodedAssets,err  := json.Marshal(assets)
+													if err != nil {
+														return nil, err
+													}
+													err = stub.PutState("assets", []byte(encodedAssets))
+													if err != nil {
+														return nil, err
+													}
+													//Execution of chaincode finishe successfully
+													tosend := "Tx chaincode finished OK." + stub.GetTxID()
+													err = stub.SetEvent("evtsender", []byte(tosend))
+													if err != nil {
+														return nil, err
+													}
+
+										}else{
+											tosend := "User not allowed to do this action" + "." + stub.GetTxID()
+											err := stub.SetEvent("evtsender", []byte(tosend))
+											if err != nil {
+												return nil, err
+											}
+										}
+										return nil, nil
+
+									}
+
+
+
 									func findSupplementInSlice(s []DiplomaSupplement, supplementId string) (res DiplomaSupplement, pos int){
 										pos = -1
 										for index,element := range s {
@@ -750,6 +845,9 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 									}
 
 
+
+
+
 									/**
 									A DiplomaSupplement slice, s
 									The position of the supplement to remove, i
@@ -767,6 +865,16 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 										s[len(s)-1], s[i] = s[i], s[len(s)-1]
 										return s[:len(s)-1]
 									}
+
+									/**
+									A AuthorizedUser slice, s
+									The position of the supplement to remove, i
+									**/
+									func removeAuthUserFromSlice(s []AuthorizedUser, i int) []AuthorizedUser {
+										s[len(s)-1], s[i] = s[i], s[len(s)-1]
+										return s[:len(s)-1]
+									}
+
 
 									/*
 									make and return a random string of n-length

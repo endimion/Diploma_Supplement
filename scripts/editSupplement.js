@@ -6,10 +6,22 @@
     }
 
 
-    function saveShareChanges(event){
+    function saveShareChanges(event, supplementId){
       event.preventDefault();
-      //ajax call to save changes to hl
+      let data = {};
+      data.supId = supplementId;
+      data.emails = mailstoRemove;
+
       mailstoRemove.forEach( (elt,ind) =>{
         console.log(elt);
       });
+      //ajax call to save changes to hl
+      $.post("/supplement/removeInvites",data)
+      .done(res =>{
+        console.log(res);
+      })
+      .fail(err =>{
+        console.log(err);
+      });
+
     }

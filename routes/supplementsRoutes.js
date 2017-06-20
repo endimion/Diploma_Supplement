@@ -265,6 +265,29 @@ router.get('/view/:dsHash',(req,res) =>{
     });
 
 
+    router.post('/removeInvites',(req,res) =>{
+      let invitesEmails = req.body.emails;
+      let supId = req.body.supId;
+      let userName = req.session.eID;
+
+      // hfcService.shareSupplement(employerEmail,supId,userName,req.session.userType)
+      // .then(rsp => res.status(200).send(rsp))
+      // .catch(err => {
+      //   console.log(err);
+      //   res.status(400).send(err)
+      // });
+      let test = {};
+      test.invites = invitesEmails;
+      test.eId = userName;
+      test.supId = supId;
+      res.status(200).send("ok");
+
+    });
+
+
+
+
+
     router.post('/shareQR',(req,res) =>{
       let employerEmail = req.body.email;
       let supId = req.body.supId;
