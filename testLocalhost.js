@@ -132,7 +132,7 @@ function testDeploy(){
   };
 
 
-    enrollAndRegisterUsers('deployer',[])
+    enrollAndRegisterUsers('deployer2',[])
     .then( user => {
       deployChaincodeWithParams(user,deployRequest)
       .then(
