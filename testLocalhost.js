@@ -173,7 +173,7 @@ function enrollAndRegisterUsers(userName,enrollAttr) {
             // userObj = user;
             //setting timers for fabric waits
             // chain.setDeployWaitTime(config.deployWaitTime);
-            chain.setDeployWaitTime(120);
+            chain.setDeployWaitTime(200);
             // networkConfig.chain.setInvokeWaitTime(60);
             // console.log("\nDeploying chaincode ...");
 
@@ -195,7 +195,8 @@ function enrollAndRegisterUsers(userName,enrollAttr) {
     return new Promise(function(resolve,reject){
       // Trigger the deploy transaction
       var deployTx = userObj.deploy(deployReq);
-
+      console.log("will deploy");
+      console.log(deployReq);
       // Print the deploy results
       deployTx.on('complete', function(results) {
         // Deploy request completed successfully
