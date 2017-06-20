@@ -280,7 +280,14 @@ router.get('/view/:dsHash',(req,res) =>{
       test.invites = invitesEmails;
       test.eId = userName;
       test.supId = supId;
-      res.status(200).send("ok");
+      hfcService.removeInvites(userName, supId, invitesEmails).then(resp =>{
+        res.status(200).send("ok");
+      })
+      .catch(err =>{
+          console.log(err);
+          res.status(400).send(err);
+      });
+
 
     });
 

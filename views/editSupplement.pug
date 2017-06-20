@@ -30,7 +30,8 @@ block content
                                   onclick='removeUser("'+val.Email+'","'+key+'")') cancel
                 div.row
                   div.col.s6.m6.l6
-                    a.btn.btn-primary(href="#", style ="margin-right:0.1em;" onclick='saveShareChanges(event)') Save
+                    a.btn.btn-primary(href="#", style ="margin-right:0.1em;" 
+                                    onclick='saveShareChanges(event,"'+supplement.Id+'")') Save
                   div.col.s6.m6.l6
                     a.btn.btn-primary(href="/supplement/view") Cancel
                 

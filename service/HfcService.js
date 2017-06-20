@@ -32,6 +32,33 @@ exports.publishSupplement = function(owner, university, _id){
 
 
 
+exports.removeInvites = function(userEid, supplementId, mailsArray){
+  let mailString = "";
+  mailsArray.forEach( (mail,index) => {
+    mailString += mail+";";
+  });
+  console.log(mailString)  ;
+  // console.log(owner + university + _id);
+  return new Promise(function(resolve,reject){
+    let removeArgs = [supplementId,mailString];
+    let _enrollAttr = [{name:'typeOfUser',value:'Student'},{name:"eID",value:userEid}];
+    let _invAttr = ['typeOfUser','eID'];
+    let removeReq = {
+      chaincodeID: basic.config.chaincodeID,
+      fcn: "uninvite",
+      args: removeArgs,
+      attrs: _invAttr
+    };
+    let fnc = invokeCurryPromise(removeReq);
+    // console.log("invokeCurryPromise");
+    makeHfcCall(fnc,10,resolve,reject,userEid,_enrollAttr)();
+  });
+
+};
+
+
+
+
 exports.getSupplements = function(userEid, userType){
   return new Promise(function(resolve,reject){
     let queryArgs = [userEid];
