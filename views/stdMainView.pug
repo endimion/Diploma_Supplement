@@ -6,14 +6,49 @@ block content
     .row
       .col.l12.m12
         h3.display-4.m-b-2= title
-    .row
+    //- .row
       .col.l12.md12
         div.col.m12=message
-    .row
+    //- .row
       .col.l12.md12
         div.col.m6 eID: 
         div.col.m6=eID
     .row
+      .col.s12.m6
+        .card 
+          .card-image
+            img(src="/img/manage-documents.png" style="margin: 0 auto; display: block;")
+            span.card-title Manage Supplements
+          .card-content
+            p Use the following link to see all the supplements that are registered to ypu.
+              | From that page you can add/remove users that have access to the supplements 
+              | Generate QR code invites that you can add to your CV.
+          .card-action
+            a( href="/supplement/view") Manage Supplements
+      .col.s12.m6
+        .card 
+          .card-image
+            img(src="/img/publish-document.png" style="margin: 0 auto; display: block;width: 65%;")
+            span.card-title Request a new Supplement
+          .card-content
+            p Send a Request to the University to publish a diploma supplement for you.
+              | Once published only you will have access to it (view, manages allowed users etc).
+          .card-action
+            a( href="/supplement/request") Request Supplement
+    .row
+      .col.s12.m6
+        .card 
+          .card-image
+            img(src="/img/manage-user.png" style="margin: 0 auto; display: block;")
+            span.card-title Manage Account
+          .card-content
+            p Manage your account information.
+              //- | I am convenient because I require little markup to use effectively.
+          .card-action
+            a.button-collapse(  href="#" data-activates="slide-out") Account
+    
+
+    //- .row
       .col.l6.m6
         a.btn.btn-primary(href="/supplement/view") Manage Supplements 
       .col.l6.m6
