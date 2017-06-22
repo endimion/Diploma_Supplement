@@ -149,7 +149,10 @@ router.get('/authenticate/:token',(req,res) =>{
       req.session.userName = userDetails.userName;
       req.session.firstName = userDetails.firstName;
       req.session.lastName = userDetails.lastName;
+      console.log(req.session);
+
       let cookie = req.cookies.dsHash;
+      console.log("dsHashCookie: " + cookie);
       if (cookie === undefined)
       {
         // console.log(req.session);

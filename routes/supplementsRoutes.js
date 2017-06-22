@@ -55,6 +55,21 @@ router.get('/view',sessionCheck,(req,res) =>{
 });
 
 
+router.get('/download/:supId',sessionCheck,(req,res) =>{
+  let supId = req.params.supId;
+  let userEid = req.session.eID;
+  let userType =  req.session.userType;
+  console.log("\nsupplemenstRoutes:: /edit/supId " + supId + " " + userEid + " "+ userType);
+  hfcService.getSupplementById(supId,userEid,userType)
+  .then(result => {
+          res.send(result);
+  })
+  .catch(err =>{
+    res.render('errorMessage',{ title: 'Ooops... an error occured!',
+                message: err.toString(),
+                stdId: req.session.eID});
+  });
+});
 
 
 
@@ -85,11 +100,14 @@ router.get('/edit/:supId',sessionCheck,(req,res) =>{
 
 
 router.get('/view/:dsHash',(req,res) =>{
-  let userName = req.session.eID;
+  console.log(req.session);
+  let eid = req.session.eID;
   let dsHash = req.params.dsHash;
   let userType = req.session.userType;
-  if(userName){
-    hfcService.getSupplementByHash(userName,dsHash,userType)
+
+  console.log("Session eID " + eid);
+  if(eid){
+    hfcService.getSupplementByHash(eid,dsHash,userType)
       .then(result => {
             // console.log("\nersult \n") ;
             // console.log(result);

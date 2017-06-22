@@ -13,3 +13,4 @@ resources/emailCredentials
 tmp/**
 chaincodeIDLocalHost
 tmp/keyValStore/**
+sessions/**

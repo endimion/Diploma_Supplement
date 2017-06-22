@@ -37,6 +37,7 @@ type DiplomaSupplement struct {
 	University string
 	Authorized []AuthorizedUser
 	Id string
+	Signature string
 }
 
 

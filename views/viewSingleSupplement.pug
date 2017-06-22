@@ -12,11 +12,15 @@ block content
     .row
       .col.s12.m6
         .card
-          .card-content#textContent
+          .row.card-content#textContent
             span.card-title Supplement #{supplement.Id}
             p Alumni: #{supplement.Name} #{supplement.Surname}
             p(style="word-break: break-all;") eID:  #{supplement.Owner}
             p University:#{supplement.University}
+          .row.card-content#buttons
+            div.col.s6.m3.l3(style="position: relative; ")
+              a.btn-floating.btn-large.waves-effect.waves-light.blue.darken-3(href="download/"+val.Id) 
+                i.material-icons file_download
     .row
       .col.l6.m6.col-md-offset-3
         a.btn.btn-primary(href="/login") Back 
