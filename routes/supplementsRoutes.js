@@ -227,6 +227,10 @@ router.get('/view/:dsHash',(req,res) =>{
               // console.log("\nthe result is" + response);
               counter = 10;
               let supplement = JSON.parse(response);
+
+              console.log("supplement:" );
+              console.log(supplement);
+
               res.render('viewSingleSupplement',{ title: 'View Supplement',
               message: 'Welcome user: ' + req.session.eID , userType: req.session.userType,
               supplement: supplement,
