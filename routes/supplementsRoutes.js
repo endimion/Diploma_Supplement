@@ -350,12 +350,12 @@ router.get('/view/:dsHash',(req,res) =>{
     router.post('/request',sessionCheck,(req,res) =>{
       let name = req.body.name;
       let eid = req.body.eid;
-      let uniId = req.body.uniId;
+      let uniName = req.body.uniName;
       let email = req.body.email;
       let userEid = req.body.eIDHash;
       let userType = req.session.userType;
-      let university = prosses.env.UNIVERSITY || "ntua";
-      hfcService.requestPublication(name,eid,uniId,email,userEid,userType,university)
+      let uniId = process.env.UNIVERSITY || "ntua";
+      hfcService.requestPublication(name,eid,uniId,email,userEid,userType,uniName)
       .then( response =>{
         res.render('requestPublication',{ title: 'Published Supplements',
                   message: "Request Submitted Succesfully!",
