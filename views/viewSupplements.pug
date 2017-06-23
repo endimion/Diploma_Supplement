@@ -23,16 +23,16 @@ block content
                   
             .card-action
               div.row.card-content
-                div.col.s6.m3.l3(style="position: relative; ")
-                  a.btn-floating.btn-large.waves-effect.waves-light.blue.darken-3(href="download/"+val.Id) 
+                div.col.s3.m3.l3 
+                  a.btn-floating.btn-medium.waves-effect.waves-light.blue.darken-3(href="download/"+val.Id) 
                     i.material-icons file_download
                 if userType === 'Student'
-                  div.col.s6.m3.l3(style="position: relative; ")
-                    a.btn-floating.btn-large.waves-effect.waves-light.yellow.darken-3(href="edit/"+val.Id) 
+                  div.col.s3.m3.l3 
+                    a.btn-floating.btn-medium.waves-effect.waves-light.yellow.darken-3(href="edit/"+val.Id) 
                       i.material-icons edit
-                  div.col.s12.m12(style="position: relative; ")
-                    <div class="fixed-action-btn horizontal click-to-toggle" style="position: absolute; right: 24px;bottom:0;">
-                      <a class="btn-floating btn-large red">
+                  div.col.s6.m6.l3 
+                    <div class="fixed-action-btn horizontal click-to-toggle" style="position: absolute; right: 24px;bottom:4em;">
+                      <a class="btn-floating btn-medium red">
                         <i class="material-icons">share</i>
                       </a>
                       <ul>
@@ -74,14 +74,16 @@ block content
                         div.form-group
                           input.form-control(id='qrSupId'+val.Id,type='hidden',  name='qrSupId', value=val.Id)
                         a.waves-effect.waves-green.btn-flat(onclick='makeQRcode("qrEmail'+val.Id+'",'+'"qrSupId'+val.Id+'","'+val.Id+'")') Generate QR link  
-                      div.qrCode(style="display:none")
-                        div.qrMessage(style="width:60%; float:right")
-                          p Save this image and add it to your Cv
-                          p Upon scanning it the recipient will recieve a code by email
-                          p that will allow them to view your Diploma Supplement
-                        //- div(id="qrImage"+val.Id,style="width:30%;float:left")
-                        canvas(id="canvas"+val.Id ,style="width:30%;float:left; display:none")
-                        div(id="imgContainer" +val.Id,style="width:30%;float:left;margin: 0.2em 0 1em 0;")
+                      div.qrCode.container(style="display:none")
+                        .row
+                          .col.m6.s12  
+                            canvas(id="canvas"+val.Id ,style="display:none")
+                            div(id="imgContainer" +val.Id,style="margin: 0 auto; display: block;")
+                          .col.m6.s12.qrMessage
+                            p Save this image and add it to your Cv
+                            p Upon scanning it the recipient will recieve a code by email
+                            p that will allow them to view your Diploma Supplement
+                          //- div(id="qrImage"+val.Id,style="width:30%;float:left")
                       include preloader  
                   </div>
 

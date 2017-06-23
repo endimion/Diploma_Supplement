@@ -53,7 +53,7 @@ function makeQRcode(emailInput,supIdInput,id){
     // makeQRLink("qrImage"+id,"qrLink"+id);
     let canvas = document.getElementById('canvas'+id);
     let img    = canvas.toDataURL("image/png");
-    document.getElementById('imgContainer'+id).innerHTML = "<img src='" + img + "'>";
+    document.getElementById('imgContainer'+id).innerHTML = "<img style=\"width: 100%;\" src='" + img + "'>";
 
   }
   xhr.send(params);
