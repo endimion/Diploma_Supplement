@@ -236,6 +236,24 @@ exports.shareSupplementQR = function(employerEmail,supId,userEid, userType){
 
 
 
+exports.requestPublication = function(name,eid,uniId,email,userEid,userType,university){
+  return new Promise( (resolve,reject) => {
+    let _enrollAttr = [{name:'typeOfUser',value:userType},{name:"eID",value:userEid}];
+    let _invAttr = ['typeOfUser','eID'];
+    let addDSMapArgs = [name,eid,uniId,email,userEid,university];
+
+    let reqPubReq = {
+      chaincodeID: basic.config.chaincodeID,
+      fcn: "requestSupplementPublication",
+      args: addDSMapArgs,
+      attrs: _invAttr
+    };
+    let addDSFnc = invokeCurryPromise(reqPubReq);
+    makeHfcCall(addDSFnc,10,resolve,reject,userEid,_enrollAttr)();
+  });
+};
+
+
 
 
 

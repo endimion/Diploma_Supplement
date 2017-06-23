@@ -58,6 +58,7 @@ type DiplomaSupplementMapsAsset struct{
 	DiplomaSupplementMaps map[string]DiplomaSupplementMap
 }
 
+
 type DiplomaSupplementMap struct {
 	DSHash string
 	DSId string
@@ -72,11 +73,25 @@ type Assets struct{
 	Employers []string
 	Universities []string
 	DiplomaSupplementMap map[string]DiplomaSupplementMap
+	PublishRequests []PublishRequest
 }
 
 type AuthorizedUser struct{
 	Email string
 	Eid   string
+}
+
+type PublishRequest struct{  //name,eid,uniId,email,userEid
+	Name  string
+	Eid string
+	Email string
+	UniId string
+	EidHash string
+	University string
+}
+
+type PubRequestsAsset struct{
+		Requests []PublishRequest
 }
 
 
@@ -91,11 +106,18 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface, function string
 	var employers = make([]string,0)
 	// slice, that will hold the eIDs of the universities as strings
 	var universities = make([]string,0)
+
+	// slice, that will hold the publication Requests of the users
+	var pubRequests = make([]PublishRequest,0)
+
 	//map that will hold the diplomasupplmet-hash-recipient map
 	var diplomaSupplementMaps = make(map[string]DiplomaSupplementMap)
 
 
-	assets := Assets{Universities: universities, Employers:employers, Supplements:supplements, DiplomaSupplementMap:diplomaSupplementMaps}
+	assets := Assets{ Universities: universities,
+										Employers:employers, Supplements:supplements,
+										DiplomaSupplementMap:diplomaSupplementMaps,
+										PublishRequests : pubRequests	}
 	encodedAssets,err  := json.Marshal(assets)
 	err = stub.PutState("assets", []byte(encodedAssets))
 	if err != nil {
@@ -132,6 +154,10 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 		return t.uninviteUsers(stub,args)
 	}
 
+	if function == "requestSupplementPublication"{
+		return t.requestSupplementPublication(stub,args)
+	}
+
 	return nil, nil
 }
 
@@ -158,6 +184,9 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 		return t.getDiplomaSupplementMapsByHash(stub,args)
 	}
 
+	if function == "getPendingRequestByUniv" {
+		return t.getPendingRequestByUniv(stub,args)
+	}
 
 	// var A string // Entities
 	// var err error
@@ -338,20 +367,44 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 				}
 
 
+	func (t *SimpleChaincode) getPendingRequestByUniv(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+		if len(args) != 0 {
+			return nil, errors.New("Incorrect number of arguments. Expecting 0")
+		}
+		// universityEid := args[0]
+		eid, err := stub.ReadCertAttribute("eID")
+		universityEid := string(eid)
 
+		assetBytes, err := stub.GetState("assets")
+		if err != nil {
+			jsonResp := "{\"Error\":\"Failed to get state for key \"assets\"}"
+			return nil, errors.New(jsonResp)
+		}
+		assets := Assets{}
+		json.Unmarshal([]byte(assetBytes), &assets)
+
+		matchingPendingRequests := make([]PublishRequest,0)
+		pendingReq := assets.PublishRequests
+		//fill the matching Requests
+		for _,request := range pendingReq {
+			if request.UniId == universityEid {
+				matchingPendingRequests = append(matchingPendingRequests,request)
+			}
+		}
+		encodedRes,_ := json.Marshal(matchingPendingRequests)
+		return []byte(encodedRes), nil
+}
+
+
+
+// --------------------------INVOKE TRANSACTIONS -----------------------------------------------------
 
 				// Puts a new DiplomaSupplement to the state
 				// args[0] the DiplomaSupplement JSON string
 				func (t *SimpleChaincode) publish(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 					if len(args) != 1 {
-						tosend := "Incorrect number of arguments. Expecting 1" + "." + stub.GetTxID()
-						err := stub.SetEvent("evtsender", []byte(tosend))
-						if err != nil {
-							return nil, err
-						}
+						return sendErrorEvent(stub,  "Incorrect number of arguments. Expecting 1"  )
 					}
-
-
 					//encode into a DiplomaSupplement strct the argument
 					suplementString := args[0]
 					suplement := DiplomaSupplement{}
@@ -366,11 +419,7 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 						//get the assets from the state
 						assetBytes, err := stub.GetState("assets")
 						if err != nil {
-							tosend := "{\"Error\":\"Failed to get state for key \"assets\"}" + "." + stub.GetTxID()
-							err = stub.SetEvent("evtsender", []byte(tosend))
-							if err != nil {
-								return nil, err
-							}
+							return sendErrorEvent(stub,"{\"Error\":\"Failed to get state for key \"assets\"}" )
 						}
 						assets := Assets{}
 						json.Unmarshal([]byte(assetBytes), &assets)
@@ -382,19 +431,11 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 						//update the state with the new assets
 						encodedAssets,err  := json.Marshal(assets)
 						if err != nil {
-							tosend := "Could not  marshal assets" + "." + stub.GetTxID()
-							err = stub.SetEvent("evtsender", []byte(tosend))
-							if err != nil {
-								return nil, err
-							}
+							return sendErrorEvent(stub, "Could not  marshal assets")
 						}
 						err = stub.PutState("assets", []byte(encodedAssets))
 						if err != nil {
-							tosend := "Could not place assets back in the state" + "." + stub.GetTxID()
-							err = stub.SetEvent("evtsender", []byte(tosend))
-							if err != nil {
-								return nil, err
-							}
+							return sendErrorEvent(stub,"Could not place assets back in the state" )
 						}
 						//Execution of chaincode finished successfully
 						tosend := "Tx chaincode finished OK." + stub.GetTxID()
@@ -405,10 +446,6 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 
 					}
 					return nil, nil
-					// }
-
-					// return nil, errors.New("Only University users  may perform this query not " + attrString)
-
 				}
 
 
@@ -419,7 +456,7 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 				// and he has to be the owner of the supplment as that is identified by the DSId filed of the DSMAP struct
 				func (t *SimpleChaincode) addDiplomaSupplementMap(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 					if len(args) != 1 {
-						return nil, errors.New("Incorrect number of arguments. Expecting 1")
+						return sendErrorEvent(stub,"Incorrect number of arguments. Expecting 1")
 					}
 
 					//encode into a DiplomaSupplementMap from strct the argument
@@ -435,26 +472,14 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 
 					assetBytes, err := stub.GetState("assets")
 					if err != nil {
-						//transactions cannot return errors this way we have to use an event
-						// return nil, errors.New("No Supplement Found with the given ID")
-						tosend := "Error, Failed to get state for key \"assets\"" + suplementId + "." + stub.GetTxID()
-						err = stub.SetEvent("evtsender", []byte(tosend))
-						if err != nil {
-							return nil, err
-						}
+						return sendErrorEvent(stub, "Error, Failed to get state for key \"assets\"" )
 					}
 					assets := Assets{}
 					json.Unmarshal([]byte(assetBytes), &assets)
 
 					supplement, position := findSupplementInSlice(assets.Supplements, suplementId)
 					if position == -1{
-						//transactions cannot return errors this way we have to use an event
-						// return nil, errors.New("No Supplement Found with the given ID")
-						tosend := "Error, No Supplement Found with the given ID" + suplementId + "." + stub.GetTxID()
-						err = stub.SetEvent("evtsender", []byte(tosend))
-						if err != nil {
-							return nil, err
-						}
+						return sendErrorEvent(stub, "Error, No Supplement Found with the given ID" + suplementId)
 					}
 
 					//check if the supplement is issued by the user sending the transaction
@@ -467,25 +492,17 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 						//update the state with the new assets
 						encodedAssets,err  := json.Marshal(assets)
 						if err != nil {
-							tosend := "Error, Marshaling Assets" + suplementId + "." + stub.GetTxID()
-							err = stub.SetEvent("evtsender", []byte(tosend))
-							if err != nil {
-								return nil, err
-							}
+							return sendErrorEvent(stub, "Error, Marshaling Assets" )
 						}
 						err = stub.PutState("assets", []byte(encodedAssets))
 						if err != nil {
-							tosend := "Error,putting assets back in state" + suplementId + "." + stub.GetTxID()
-							err = stub.SetEvent("evtsender", []byte(tosend))
-							if err != nil {
-								return nil, err
-							}
+							return sendErrorEvent(stub,  "Error,putting assets back in state" )
 						}
 						//Execution of chaincode finishe successfully
 						tosend := "Tx chaincode finished OK." + stub.GetTxID()
 						err = stub.SetEvent("evtsender", []byte(tosend))
 						if err != nil {
-							return nil, err
+							return sendErrorEvent(stub,"Error, sending event")
 						}
 					}
 					return nil, nil
@@ -495,11 +512,12 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 
 				/*
 				Adds the given recepientEid (args[1]) as the the Recepient of the DiplomaSupplementMap
-				which is identified by the give DSHash (args[0])
+				which is identified by the give DSHash (args[0]) and updates the authorized users of
+				the actual diplpoma supplement
 				*/
 				func (t *SimpleChaincode) addRecepientToDSMap(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 					if len(args) != 3 {
-						return nil, errors.New("Incorrect number of arguments. Expecting 3")
+						return sendErrorEvent(stub,"Wrong number of arguments, Expecting 3")
 					}
 
 					//encode into a DiplomaSupplementMap from strct the argument
@@ -510,8 +528,7 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 					//get the assets from the state
 					assetBytes, err := stub.GetState("assets")
 					if err != nil {
-						jsonResp := "{\"Error\":\"Failed to get state for key \"assets\"}"
-						return nil, errors.New(jsonResp)
+						return sendErrorEvent(stub,  "{\"Error\":\"Failed to get state for key \"assets\"}")
 					}
 					assets := Assets{}
 					json.Unmarshal([]byte(assetBytes), &assets)
@@ -521,22 +538,11 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 					dsMap,ok:= assets.DiplomaSupplementMap[dsHash]
 					if ok {
 						if dsMap.Recipient != "" {
-							// return nil, errors.New("No DiplomaSupplementMap is already finalized! Cannot add new Recipient!")
-							//transactions cannot return errors this way we have to use an event
-							// return nil, errors.New("No Supplement Found with the given ID")
-							tosend := "Error, DiplomaSupplementMap is already finalized! Cannot add new Recipient!" +"." + stub.GetTxID()
-							err = stub.SetEvent("evtsender", []byte(tosend))
-							if err != nil {
-								return nil, err
-							}
-							}else{
+							return sendErrorEvent(stub, "Error, DiplomaSupplementMap is already finalized! Cannot add new Recipient!")
+						}else{
 								if dsMap.Code != emailedCode {
-									tosend := "Error, Wrong Authorization code!" +"." + stub.GetTxID()
-									err = stub.SetEvent("evtsender", []byte(tosend))
-									if err != nil {
-										return nil, err
-									}
-									}else{
+									return sendErrorEvent(stub,  "Error, Wrong Authorization code!")
+								}else{
 										dsMap.Recipient = recepientEid
 										//update the assets and put them in the state
 										//update the DSMap
@@ -547,11 +553,7 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 										suplementId := dsMap.DSId
 										supToUpdate , position := findSupplementInSlice(supplementSlice, suplementId)
 										if position == -1 {
-											tosend := "Error, No supplement found for the given ID" +suplementId+ "."+ stub.GetTxID()
-											err = stub.SetEvent("evtsender", []byte(tosend))
-											if err != nil {
-												return nil, err
-											}
+											return sendErrorEvent(stub,"Error, No supplement found for the given ID" +suplementId)
 										}
 										authorizedUserEntry  := AuthorizedUser{Email:dsMap.Email, Eid: recepientEid}
 										supToUpdate.Authorized = append(supToUpdate.Authorized,authorizedUserEntry)
@@ -564,31 +566,24 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 
 										encodedAssets,err  := json.Marshal(assets)
 										if err != nil {
-											return nil, err
+											return sendErrorEvent(stub,"Error, Marshaling assets")
 										}
 										err = stub.PutState("assets", []byte(encodedAssets))
 										if err != nil {
-											return nil, err
+											return sendErrorEvent(stub,"Error, putting assets")
 										}
 										//Execution of chaincode finishe successfully
 										tosend := "Tx chaincode finished OK." + stub.GetTxID()
 										err = stub.SetEvent("evtsender", []byte(tosend))
 										if err != nil {
-											return nil, err
+											return sendErrorEvent(stub,"Error, sending event")
 										}
 									}
 
 								}
 								}else{
-									// return nil, errors.New("No DiplomaSupplementMap Found with the given hash")
-									tosend := "Error, No DiplomaSupplementMap Found with the given hash " + dsHash + "."+ stub.GetTxID()
-									err = stub.SetEvent("evtsender", []byte(tosend))
-									if err != nil {
-										return nil, err
-									}
-
+									return sendErrorEvent(stub, "Error, No DiplomaSupplementMap Found with the given hash " + dsHash)
 								}
-
 								return nil, nil
 							}
 
@@ -598,7 +593,7 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 							*/
 							func (t *SimpleChaincode) genCodeForDSMap(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 								if len(args) != 1 {
-									return nil, errors.New("Incorrect number of arguments. Expecting 1")
+									return sendErrorEvent(stub,"Incorrect number of arguments. Expecting 1")
 								}
 								dsHash := args[0]
 								emailCode := getRandString(5)
@@ -606,8 +601,7 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 								//get the assets from the state
 								assetBytes, err := stub.GetState("assets")
 								if err != nil {
-									jsonResp := "{\"Error\":\"Failed to get state for key \"assets\"}"
-									return nil, errors.New(jsonResp)
+									return sendErrorEvent(stub,"{\"Error\":\"Failed to get state for key \"assets\"}")
 								}
 								assets := Assets{}
 								json.Unmarshal([]byte(assetBytes), &assets)
@@ -616,15 +610,8 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 								dsMap,ok:= assets.DiplomaSupplementMap[dsHash]
 								if ok {
 									if dsMap.Recipient != "" {
-										// return nil, errors.New("No DiplomaSupplementMap is already finalized! Cannot add new Recipient!")
-										//transactions cannot return errors this way we have to use an event
-										// return nil, errors.New("No Supplement Found with the given ID")
-										tosend := "Error, DiplomaSupplementMap is already finalized! Cannot add new Recipient!" +"." + stub.GetTxID()
-										err = stub.SetEvent("evtsender", []byte(tosend))
-										if err != nil {
-											return nil, err
-										}
-										}else{
+										return sendErrorEvent(stub,"Error, DiplomaSupplementMap is already finalized! Cannot add new Recipient!")
+									}else{
 											dsMap.Code = emailCode
 											//update the assets and put them in the state
 											//update the DSMap
@@ -636,25 +623,18 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 											}
 											err = stub.PutState("assets", []byte(encodedAssets))
 											if err != nil {
-												return nil, err
+												return sendErrorEvent(stub,"Error,putting assets in state")
 											}
 											//Execution of chaincode finishe successfully
 											tosend := "Tx chaincode finished OK." + stub.GetTxID()
 											err = stub.SetEvent("evtsender", []byte(tosend))
 											if err != nil {
-												return nil, err
+												return sendErrorEvent(stub,"Error, sending event")
 											}
 										}
 										}else{
-											// return nil, errors.New("No DiplomaSupplementMap Found with the given hash")
-											tosend := "Error, No DiplomaSupplementMap Found with the given hash " + dsHash + "."+ stub.GetTxID()
-											err = stub.SetEvent("evtsender", []byte(tosend))
-											if err != nil {
-												return nil, err
-											}
-
+											return sendErrorEvent(stub,"Error, No DiplomaSupplementMap Found with the given hash " + dsHash )
 										}
-
 										return nil, nil
 									}
 
@@ -665,7 +645,7 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 									// it can be viewed by the user args[1]
 									func (t *SimpleChaincode) addAuthorizedUser(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 										if len(args) != 3 {
-											return nil, errors.New("Incorrect number of arguments. Expecting 2")
+											return sendErrorEvent(stub,"Incorrect number of arguments. Expecting 2")
 										}
 										//the DiplomaSupplement id
 										suplementId := args[0]
@@ -676,8 +656,7 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 										//get the assets from the state
 										assetBytes, err := stub.GetState("assets")
 										if err != nil {
-											jsonResp := "{\"Error\":\"Failed to get state for key \"assets\"}"
-											return nil, errors.New(jsonResp)
+											return sendErrorEvent(stub,"{\"Error\":\"Failed to get state for key \"assets\"}")
 										}
 										//get the supplements from the assets
 										assets := Assets{}
@@ -686,7 +665,7 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 
 										supToUpdate , position := findSupplementInSlice(supplementSlice, suplementId)
 										if position == -1 {
-											return nil, errors.New("No supplement found with the given ID " + suplementId)
+											return sendErrorEvent(stub,"No supplement found with the given ID " + suplementId)
 										}
 
 
@@ -710,17 +689,17 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 											//update the state with the new assets
 											encodedAssets,err  := json.Marshal(assets)
 											if err != nil {
-												return nil, err
+												return sendErrorEvent(stub,"Error Marshaling Assets")
 											}
 											err = stub.PutState("assets", []byte(encodedAssets))
 											if err != nil {
-												return nil, err
+												return sendErrorEvent(stub,"Error putting assets in state")
 											}
 											//Execution of chaincode finishe successfully
 											tosend := "Tx chaincode finished OK." + stub.GetTxID()
 											err = stub.SetEvent("evtsender", []byte(tosend))
 											if err != nil {
-												return nil, err
+												return sendErrorEvent(stub,"Error Sending event")
 											}
 
 										}
@@ -731,13 +710,10 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 									//takes as input the supplementID and
 									// a list of users that will be removed from the authorizedUsers
 									//of that supplement
+									//
 									func (t *SimpleChaincode) uninviteUsers(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 										if len(args) != 2 {
-											tosend := "Incorrect number of arguments. Expecting 2" + "." + stub.GetTxID()
-											err := stub.SetEvent("evtsender", []byte(tosend))
-											if err != nil {
-												return nil, err
-											}
+											return sendErrorEvent(stub,"Incorrect number of arguments. Expecting 2")
 										}
 										//the DiplomaSupplement id
 										suplementId := args[0]
@@ -747,12 +723,7 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 										//get the assets from the state
 										assetBytes, err := stub.GetState("assets")
 										if err != nil {
-											// jsonResp := "{\"Error\":\"Failed to get state for key \"assets\"}"
-											tosend := "Failed to get state for key \"assets\"" + "." + stub.GetTxID()
-											err := stub.SetEvent("evtsender", []byte(tosend))
-											if err != nil {
-												return nil, err
-											}
+											return sendErrorEvent(stub,"Failed to get state for key \"assets\"")
 										}
 										//get the supplements from the assets
 										assets := Assets{}
@@ -761,12 +732,7 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 
 										supToUpdate , position := findSupplementInSlice(supplementSlice, suplementId)
 										if position == -1 {
-											// return nil, errors.New("No supplement found with the given ID " + suplementId)
-											tosend := "No supplement found with the given ID"+suplementId+ "." + stub.GetTxID()
-											err := stub.SetEvent("evtsender", []byte(tosend))
-											if err != nil {
-												return nil, err
-											}
+											return sendErrorEvent(stub,"No supplement found with the given ID"+suplementId)
 										}
 
 
@@ -794,30 +760,99 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 													//update the state with the new assets
 													encodedAssets,err  := json.Marshal(assets)
 													if err != nil {
-														return nil, err
+														return sendErrorEvent(stub,"Error Marshaling Assets")
 													}
 													err = stub.PutState("assets", []byte(encodedAssets))
 													if err != nil {
-														return nil, err
+														return sendErrorEvent(stub,"Error putting assets")
+
 													}
 													//Execution of chaincode finishe successfully
 													tosend := "Tx chaincode finished OK." + stub.GetTxID()
 													err = stub.SetEvent("evtsender", []byte(tosend))
 													if err != nil {
-														return nil, err
+														return sendErrorEvent(stub,"Error Sending event")
 													}
 
 										}else{
-											tosend := "User not allowed to do this action" + "." + stub.GetTxID()
-											err := stub.SetEvent("evtsender", []byte(tosend))
-											if err != nil {
-												return nil, err
-											}
+											return sendErrorEvent(stub,"User not allowed to do this action")
 										}
 										return nil, nil
 
 									}
 
+									//Adds a request by a user to the university to publish his DS
+									func (t *SimpleChaincode) requestSupplementPublication(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+										if len(args) != 6 {
+											return sendErrorEvent(stub,"Incorrect number of arguments. Expecting 6")
+										}
+
+										//name,eid,uniId,email,userEid,university
+										name := args[0]
+										eid := args[1]
+										uniId := args[2]
+										email  := args[3]
+										eidHash := args[4]
+										university := args[5]
+
+										//get the assets from the state
+										assetBytes, err := stub.GetState("assets")
+										if err != nil {
+											return sendErrorEvent(stub,"Failed to get state for key \"assets\"")
+										}
+										//get the supplements from the assets
+										assets := Assets{}
+										json.Unmarshal([]byte(assetBytes), &assets)
+										pubRequestsSlice := assets.PublishRequests
+
+										// Here the ABAC API is called to verify the attributes, only then will the
+										// supplement be updated
+										isStudent, _ := stub.VerifyAttribute("typeOfUser", []byte("Student"))
+										if isStudent{
+											request := PublishRequest{
+														Name  : name,
+														Eid : eid,
+														Email : email,
+														UniId : uniId,
+														EidHash : eidHash,
+														University : university }
+											pubRequestsSlice = append(pubRequestsSlice,request)
+
+											assets.PublishRequests = pubRequestsSlice
+
+											//update the state with the new assets
+											encodedAssets,err  := json.Marshal(assets)
+											if err != nil {
+												return sendErrorEvent(stub,"Could not Marshal Assets")
+											}
+											err = stub.PutState("assets", []byte(encodedAssets))
+											if err != nil {
+												sendErrorEvent(stub,"Could not put assets to state")
+											}
+											//Execution of chaincode finishe successfully
+											tosend := "Tx chaincode finished OK." + stub.GetTxID()
+											err = stub.SetEvent("evtsender", []byte(tosend))
+											if err != nil {
+												return sendErrorEvent(stub,"Could not send success event")
+											}
+
+										}else{
+											attr, _ := stub.ReadCertAttribute("typeOfUser")
+											attrString := string(attr)
+											return sendErrorEvent(stub,"User not allowed to do this action. Not " + attrString)
+										}
+										return nil, nil
+									}
+
+								//sends an errorEvent Message and returns the error
+								func sendErrorEvent(stub shim.ChaincodeStubInterface, message string)([]byte, error){
+												tosend := message + "." + stub.GetTxID()
+												err := stub.SetEvent("evtsender", []byte(tosend))
+												if err != nil {
+													return nil, err
+												}
+												return nil, nil
+								}
 
 
 									func findSupplementInSlice(s []DiplomaSupplement, supplementId string) (res DiplomaSupplement, pos int){

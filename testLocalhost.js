@@ -1,13 +1,13 @@
 "use strict";
 process.env.GOPATH = __dirname;
 /**
- * This example shows how to do the following in a web app.
- * 1) At initialization time, enroll the web app with the block chain.
- *    The identity must have already been registered.
- * 2) At run time, after a user has authenticated with the web app:
- *    a) register and enroll an identity for the user;
- *    b) use this identity to deploy, query, and invoke a chaincode.
- */
+* This example shows how to do the following in a web app.
+* 1) At initialization time, enroll the web app with the block chain.
+*    The identity must have already been registered.
+* 2) At run time, after a user has authenticated with the web app:
+*    a) register and enroll an identity for the user;
+*    b) use this identity to deploy, query, and invoke a chaincode.
+*/
 
 // To include the package from your hyperledger fabric directory:
 //    var hfc = require("myFabricDir/sdk/node");
@@ -16,6 +16,8 @@ process.env.GOPATH = __dirname;
 var hfc = require('hfc');
 var util = require('util');
 var fs = require('fs');
+let ChainCodeQuery = require('./ChaincodeQuery.js');
+
 // Create a client chain.
 // The name can be anything as it is only used internally.
 var chain = hfc.newChain("targetChain");
@@ -37,76 +39,11 @@ chain.eventHubConnect("grpc://172.17.0.1:7053");
 process.on('exit', function() {
   chain.eventHubDisconnect();
 });
-// Enroll "WebAppAdmin" which is already registered because it is
-// listed in fabric/membersrvc/membersrvc.yaml with its one time password.
-// If "WebAppAdmin" has already been registered, this will still succeed
-// because it stores the state in the KeyValStore
-// (i.e. in '/tmp/keyValStore' in this sample).
-// chain.enroll("WebAppAdmin", "DJY27pEnl16d", function(err, webAppAdmin) {
-//    if (err) return console.log("ERROR: failed to register %s: %s",err);
-//    // Successfully enrolled WebAppAdmin during initialization.
-//    // Set this user as the chain's registrar which is authorized to register other users.
-//    chain.setRegistrar(webAppAdmin);
-//    // Now begin listening for web app requests
-//    listenForUserRequests();
-// });
 
-// enrollAndRegisterUsers("testUser",[]).then(res => {console.log(res)}).catch(err => {console.log(err)});
-testDeploy();
+// testDeploy();
+// testRequestSupplementPublication();
 
-
-// // Main web app function to listen for and handle requests
-// function listenForUserRequests() {
-//    for (;;) {
-//       // WebApp-specific logic goes here to await the next request.
-//       // ...
-//       // Assume that we received a request from an authenticated user
-//       // 'userName', and determined that we need to invoke the chaincode
-//       // with 'chaincodeID' and function named 'fcn' with arguments 'args'.
-//       handleUserRequest(userName,chaincodeID,fcn,args);
-//    }
-// }
-//
-// // Handle a user request
-// function handleUserRequest(userName, chaincodeID, fcn, args) {
-//    // Register and enroll this user.
-//    // If this user has already been registered and/or enrolled, this will
-//    // still succeed because the state is kept in the KeyValStore
-//    // (i.e. in '/tmp/keyValStore' in this sample).
-//    var registrationRequest = {
-//         enrollmentID: userName,
-//         // Customize account & affiliation
-//         account: "bank_a",
-//         affiliation: "00001"
-//    };
-//    chain.registerAndEnroll( registrationRequest, function(err, user) {
-//       if (err) return console.log("ERROR: %s",err);
-//       // Issue an invoke request
-//       var invokeRequest = {
-//         // Name (hash) required for invoke
-//         chaincodeID: chaincodeID,
-//         // Function to trigger
-//         fcn: fcn,
-//         // Parameters for the invoke function
-//         args: args
-//      };
-//      // Invoke the request from the user object.
-//      var tx = user.invoke(invokeRequest);
-//      // Listen for the 'submitted' event
-//      tx.on('submitted', function(results) {
-//         console.log("submitted invoke: %j",results);
-//      });
-//      // Listen for the 'complete' event.
-//      tx.on('complete', function(results) {
-//         console.log("completed invoke: %j",results);
-//      });
-//      // Listen for the 'error' event.
-//      tx.on('error', function(err) {
-//         console.log("error on invoke: %j",err);
-//      });
-//    });
-// }
-
+testGetPendingPubRequests();
 
 
 function testDeploy(){
@@ -132,11 +69,11 @@ function testDeploy(){
   };
 
 
-    enrollAndRegisterUsers('deployer2',[])
-    .then( user => {
-      deployChaincodeWithParams(user,deployRequest)
-      .then(
-        res=> {console.log(res);
+  enrollAndRegisterUsers('deployer2',[])
+  .then( user => {
+    deployChaincodeWithParams(user,deployRequest)
+    .then(
+      res=> {console.log(res);
         process.exit(0);
       }).catch(err =>{
         console.log(err);
@@ -147,18 +84,77 @@ function testDeploy(){
     });
   }
 
-function enrollAndRegisterUsers(userName,enrollAttr) {
-  return new Promise(function(resolve,reject){
-    try{
-      // Enroll a 'admin' who is already registered because it is
-      // listed in fabric/membersrvc/membersrvc.yaml with it's one time password.
-      chain.enroll("admin", "Xurw3yU9zI0l", function(err, admin) {
+
+
+
+  function testRequestSupplementPublication(){
+    let _args = ["testName","testEid","testUniId","testEmail","testEidHash","testUniversity"];
+    let _enrollAttr = [{name:'typeOfUser',value:'Student'},{name:"eID",value:"studentEid"}];
+    let _invAttr = ['typeOfUser','eID'];
+    let req = {
+      chaincodeID: fs.readFileSync(__dirname + "/chaincodeIDLocalHost", 'utf8'),
+      fcn: "requestSupplementPublication",
+      args: _args,
+      attrs: _invAttr
+    };
+    enrollAndRegisterUsers("someStudent",_enrollAttr)
+    .then(user => {
+      invokeWithParams(user,req)
+      .then(res=> {
+        console.log(res);
+      }).catch(err =>{
+        console.log(err);
+        process.exit(1);
+      });
+    }).catch(err =>{
+      console.log(err);
+    });
+  }
+
+
+
+
+  function testGetPendingPubRequests(){
+    let enrollAttr = [{name:'typeOfUser',value:'University'},{name:"eID",value:"testUniId"}];
+      let queryAttr = ['typeOfUser','eID'];
+    let _args = [];
+    let chaincodeID = fs.readFileSync(__dirname + "/chaincodeIDLocalHost", 'utf8')
+    let testQ2 = new ChainCodeQuery(queryAttr, _args, chaincodeID,"getPendingRequestByUniv",queryByReqAndAttributes);
+    let testQfunc2 = testQ2.makeQuery.bind(testQ2);
+     enrollAndRegisterUsers("ntuaUser",enrollAttr)
+    .then(testQfunc2).then(res =>{
+      console.log("\nthe result is" + res);
+      process.exit(0);
+    })
+    .catch(err =>{
+      console.log("AN ERROR OCCURED!!!");
+      console.log(err);
+      process.exit(1);
+    });
+  }
+
+
+
+
+
+
+
+
+
+
+
+  function enrollAndRegisterUsers(userName,enrollAttr) {
+    return new Promise(function(resolve,reject){
+      try{
+        // Enroll a 'admin' who is already registered because it is
+        // listed in fabric/membersrvc/membersrvc.yaml with it's one time password.
+        chain.enroll("admin", "Xurw3yU9zI0l", function(err, admin) {
           if (err) reject("\nERROR: failed to enroll admin : " + err) ;
           console.log("\nEnrolled admin sucecssfully");
           // Set this user as the chain's registrar which is authorized to register other users.
           chain.setRegistrar(admin);
 
-          let enrollAttr = [{name:'typeOfUser',value:'University'}];
+          // let enrollAttr = [{name:'typeOfUser',value:'University'}];
           //creating a new user
           var registrationRequest = {
             enrollmentID: userName,
@@ -167,18 +163,18 @@ function enrollAndRegisterUsers(userName,enrollAttr) {
           };
 
           chain.registerAndEnroll(registrationRequest, function(err, user) {
-            if (err) reject(" Failed to register and enroll " + userName + ": " + err);//throw Error(" Failed to register and enroll " + networkConfig.newUserName + ": " + err);
+            if (err) reject(" Failed to register and enroll " + userName + ": " + err);
 
             console.log("\nEnrolled and registered " + userName + " successfully");
             // userObj = user;
             //setting timers for fabric waits
             // chain.setDeployWaitTime(config.deployWaitTime);
             chain.setDeployWaitTime(400);
-            // networkConfig.chain.setInvokeWaitTime(60);
+
             // console.log("\nDeploying chaincode ...");
 
             //Similarly set timer for invocation transactions
-            // networkConfig.chain.setInvokeWaitTime(100);
+
             resolve(user);
             // query2(user);
           });
@@ -189,9 +185,88 @@ function enrollAndRegisterUsers(userName,enrollAttr) {
 
 
 
+  function queryByReqAndAttributes(userObj,request,attr) {
+    return new Promise(function(resolve,reject){
+      try{
+        // Trigger the query transaction
+        var queryTx = userObj.query(request);
+        // Print the query results
+        queryTx.on('complete', function(results) {
+          // Query completed successfully
+          console.log("\nSuccessfully queried  chaincode function: request=%j, value=%s", request, results.result.toString());
+          //process.exit(0);
+          resolve(results.result.toString());
+        });
+        queryTx.on('error', function(err) {
+          // Query failed
+          console.log("\nFailed to query chaincode, function: request=%j, error=%j", request, err);
+          //process.exit(1);
+          reject(err);
+        });
+      }catch(err){
+        console.log("Error caught during query");
+        reject(err);
+      }
+    });
+  }
+
+
+
+  function invokeWithParams(userObj,invReq) {
+
+    var txHash="qwe";
+
+    return new Promise(function(resolve,reject){
+      var eh = chain.getEventHub();
+      // Trigger the invoke transaction
+      var invokeTx = userObj.invoke(invReq);
+      // Print the invoke results
+      invokeTx.on('submitted', function(results) {
+        // Invoke transaction submitted successfully
+        console.log(util.format("\nSuccessfully submitted chaincode invoke transaction: request=%j, response=%j", invReq, results));
+        txHash = results.uuid;
+
+      });
+      invokeTx.on('complete', function(results) {
+        // Invoke transaction completed successfully
+        console.log(util.format("\nSuccessfully completed chaincode invoke transaction: request=%j, response=%j", invReq, results));
+        // resolve(results);
+        // txHash = results.uuid;
+
+      });
+      invokeTx.on('error', function(err) {
+        reject(err);
+      });
+
+      //Listen to custom events
+      var regid = eh.registerChaincodeEvent(invReq.chaincodeID, "evtsender", function(event) {
+        console.log(util.format("Custom event received, payload: %j\n", event.payload.toString()));
+
+        if(event.payload.toString() && event.payload.toString().indexOf("Error") >= 0){
+          let uuid = event.payload.toString().split(".")[1];
+          eh.unregisterChaincodeEvent(regid);
+          if(uuid === txHash){ //resolve promise only when the current transaction has finished
+            eh.unregisterChaincodeEvent(regid);
+            reject(event.payload.toString());
+          }
+        }
+        if(event.payload.toString()&& event.payload.toString().indexOf("Tx chaincode finished OK") >= 0){
+          let uuid = event.payload.toString().split(".")[1];
+          console.log("\nUUID " + uuid);
+          console.log("\ntxHash " + txHash);
+          if(uuid === txHash){ //resolve promise only when the current transaction has finished
+            eh.unregisterChaincodeEvent(regid);
+            resolve(event.payload.toString());
+          }
+
+        }
+      });
+    });
+  }
+
+
 
   function deployChaincodeWithParams(userObj,deployReq) {
-
     return new Promise(function(resolve,reject){
       // Trigger the deploy transaction
       var deployTx = userObj.deploy(deployReq);

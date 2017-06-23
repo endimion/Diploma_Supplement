@@ -145,6 +145,7 @@ router.get('/authenticate/:token',(req,res) =>{
       //hash the eID we receive
       //because it might contain weird characters
       req.session.eID = hash.sha256().update(userDetails.eid).digest('hex');
+      req.session.cleanEid = userDetails.eid;
       req.session.userType = 'Student';
       req.session.userName = userDetails.userName;
       req.session.firstName = userDetails.firstName;

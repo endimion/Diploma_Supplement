@@ -335,9 +335,42 @@ router.get('/view/:dsHash',(req,res) =>{
     });
 
 
+    router.get('/request',sessionCheck,(req,res) =>{
+      res.render('requestPublication',{ title: 'Published Supplements',
+                message: "" ,
+                eID: req.session.cleanEid,
+                firstName: req.session.firstName,
+                lastName: req.session.lastName,
+                userName: req.session.userName,
+                eIDHash: req.session.eID
+                });
+    });
 
 
-
+    router.post('/request',sessionCheck,(req,res) =>{
+      let name = req.body.name;
+      let eid = req.body.eid;
+      let uniId = req.body.uniId;
+      let email = req.body.email;
+      let userEid = req.body.eIDHash;
+      let userType = req.session.userType;
+      let university = prosses.env.UNIVERSITY || "ntua";
+      hfcService.requestPublication(name,eid,uniId,email,userEid,userType,university)
+      .then( response =>{
+        res.render('requestPublication',{ title: 'Published Supplements',
+                  message: "Request Submitted Succesfully!",
+                  eID: req.session.cleanEid,
+                  firstName: req.session.firstName,
+                  lastName: req.session.lastName,
+                  userName: req.session.userName,
+                  });
+      })
+      .catch(err =>{
+        res.render('errorMessage',{ title: 'Ooops... an error occured!',
+                    message: err.toString(),
+                    stdId: req.session.eID});
+      })
+    });
 
 
 
