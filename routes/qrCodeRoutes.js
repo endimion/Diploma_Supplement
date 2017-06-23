@@ -10,16 +10,16 @@ const srvUtils = require('../utils/serverUtils.js');
 
 
 // define the home page route
-router.get('/get/:supId', function (req, res) {
-  // res.send('Hello World from login');
-   let supId = req.params.supId;
-   let serverAddr = srvUtils.address;
-   let code = qr.image('http://'+serverAddr+'/supplement/view/'+supId, { type: 'svg' });
-   res.type('svg');
-   code.pipe(res);
-
-
-});
+// router.get('/get/:supId', function (req, res) {
+//   // res.send('Hello World from login');
+//    let supId = req.params.supId;
+//    let serverAddr = srvUtils.address;
+//    let code = qr.image('http://'+serverAddr+'/supplement/view/'+supId, { type: 'svg' });
+//    res.type('svg');
+//    code.pipe(res);
+//
+//
+// });
 
 
 

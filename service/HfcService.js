@@ -222,7 +222,7 @@ exports.shareSupplementQR = function(employerEmail,supId,userEid, userType){
       return addDSFnc(user);
     }
     let successFnc = function(result){
-      let code = qr.image('http://'+srvUtils.address+ ':'+srvUtils.port+'/supplement/view/'+dsNonceHash, { type: 'svg' });
+      let code = qr.image('http://'+srvUtils.address+'/supplement/view/'+dsNonceHash, { type: 'svg' });
       // res.type('svg');
       // code.pipe(res);
       resolve(code);
