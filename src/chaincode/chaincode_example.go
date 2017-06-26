@@ -826,6 +826,9 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 												return sendErrorEvent(stub,"Could not Marshal Assets")
 											}
 											err = stub.PutState("assets", []byte(encodedAssets))
+											//and send a publication of request event
+											sendPubRequestEvent(stub,request)
+
 											if err != nil {
 												sendErrorEvent(stub,"Could not put assets to state")
 											}
@@ -844,14 +847,30 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 										return nil, nil
 									}
 
+
+
+								func sendPubRequestEvent(stub shim.ChaincodeStubInterface, pubRequest PublishRequest)([]byte, error){
+										requestJSON,err := json.Marshal(pubRequest)
+										if err != nil{
+											 sendErrorEvent(stub,"could not marshal Publish Request")
+										}
+										tosend := string(requestJSON)
+										err = stub.SetEvent("evtPubReq", []byte(tosend))
+										if err != nil {
+											return nil, err
+										}
+										return nil, nil
+								}
+
+
 								//sends an errorEvent Message and returns the error
 								func sendErrorEvent(stub shim.ChaincodeStubInterface, message string)([]byte, error){
-												tosend := message + "." + stub.GetTxID()
-												err := stub.SetEvent("evtsender", []byte(tosend))
-												if err != nil {
-													return nil, err
-												}
-												return nil, nil
+										tosend := message + "." + stub.GetTxID()
+										err := stub.SetEvent("evtsender", []byte(tosend))
+										if err != nil {
+											return nil, err
+										}
+										return nil, nil
 								}
 
 
