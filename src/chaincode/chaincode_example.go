@@ -855,7 +855,7 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 											 sendErrorEvent(stub,"could not marshal Publish Request")
 										}
 										tosend := string(requestJSON)
-										err = stub.SetEvent("evtPubReq", []byte(tosend))
+										err = stub.SetEvent("evtsender", []byte(tosend))
 										if err != nil {
 											return nil, err
 										}
