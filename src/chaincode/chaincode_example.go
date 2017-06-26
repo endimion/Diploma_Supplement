@@ -825,14 +825,15 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 											if err != nil {
 												return sendErrorEvent(stub,"Could not Marshal Assets")
 											}
-											err = stub.PutState("assets", []byte("encodedAssets"))
+											err = stub.PutState("assets", []byte(encodedAssets))
 											//and send a publication of request event
-											requestJSON,err := json.Marshal(request)
+											// requestJSON,err := json.Marshal(request)
 											if err != nil{
 												 sendErrorEvent(stub,"could not marshal Publish Request")
 											}
-											tosendEvnt := string(requestJSON)
-											err = stub.SetEvent("evtsender", []byte(tosendEvnt))
+											// tosendEvnt := string(requestJSON)
+											sendPubRequestEvent(stub, request)
+											err = stub.SetEvent("evtsender", []byte("this is a test event"))
 
 											if err != nil {
 												sendErrorEvent(stub,"Could not put assets to state")
