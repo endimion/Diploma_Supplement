@@ -827,7 +827,12 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 											}
 											err = stub.PutState("assets", []byte(encodedAssets))
 											//and send a publication of request event
-											sendPubRequestEvent(stub,request)
+											requestJSON,err := json.Marshal(request)
+											if err != nil{
+												 sendErrorEvent(stub,"could not marshal Publish Request")
+											}
+											tosendEvnt := string(requestJSON)
+											err = stub.SetEvent("evtsender", []byte(tosendEvnt))
 
 											if err != nil {
 												sendErrorEvent(stub,"Could not put assets to state")
