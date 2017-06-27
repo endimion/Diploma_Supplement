@@ -95,6 +95,15 @@ type PubRequestsAsset struct{
 }
 
 
+type CustomEvent struct{
+	Message string
+	Body   PublishRequest
+	TxId   string
+}
+
+
+
+
 var EVENT_COUNTER = "event_counter"
 
 
@@ -438,11 +447,12 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 							return sendErrorEvent(stub,"Could not place assets back in the state" )
 						}
 						//Execution of chaincode finished successfully
-						tosend := "Tx chaincode finished OK." + stub.GetTxID()
-						err = stub.SetEvent("evtsender", []byte(tosend))
-						if err != nil {
-							return nil, err
-						}
+						sendSuccessEvent(stub,PublishRequest{},"Tx chaincode finished OK.")
+						// tosend := "Tx chaincode finished OK." + stub.GetTxID()
+						// err = stub.SetEvent("evtsender", []byte(tosend))
+						// if err != nil {
+						// 	return nil, err
+						// }
 
 					}
 					return nil, nil
@@ -499,11 +509,12 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 							return sendErrorEvent(stub,  "Error,putting assets back in state" )
 						}
 						//Execution of chaincode finishe successfully
-						tosend := "Tx chaincode finished OK." + stub.GetTxID()
-						err = stub.SetEvent("evtsender", []byte(tosend))
-						if err != nil {
-							return sendErrorEvent(stub,"Error, sending event")
-						}
+						sendSuccessEvent(stub,PublishRequest{},"Tx chaincode finished OK.")
+						// tosend := "Tx chaincode finished OK." + stub.GetTxID()
+						// err = stub.SetEvent("evtsender", []byte(tosend))
+						// if err != nil {
+						// 	return sendErrorEvent(stub,"Error, sending event")
+						// }
 					}
 					return nil, nil
 				}
@@ -573,11 +584,12 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 											return sendErrorEvent(stub,"Error, putting assets")
 										}
 										//Execution of chaincode finishe successfully
-										tosend := "Tx chaincode finished OK." + stub.GetTxID()
-										err = stub.SetEvent("evtsender", []byte(tosend))
-										if err != nil {
-											return sendErrorEvent(stub,"Error, sending event")
-										}
+										sendSuccessEvent(stub,PublishRequest{},"Tx chaincode finished OK.")
+										// tosend := "Tx chaincode finished OK." + stub.GetTxID()
+										// err = stub.SetEvent("evtsender", []byte(tosend))
+										// if err != nil {
+										// 	return sendErrorEvent(stub,"Error, sending event")
+										// }
 									}
 
 								}
@@ -626,11 +638,12 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 												return sendErrorEvent(stub,"Error,putting assets in state")
 											}
 											//Execution of chaincode finishe successfully
-											tosend := "Tx chaincode finished OK." + stub.GetTxID()
-											err = stub.SetEvent("evtsender", []byte(tosend))
-											if err != nil {
-												return sendErrorEvent(stub,"Error, sending event")
-											}
+											sendSuccessEvent(stub,PublishRequest{},"Tx chaincode finished OK.")
+											// tosend := "Tx chaincode finished OK." + stub.GetTxID()
+											// err = stub.SetEvent("evtsender", []byte(tosend))
+											// if err != nil {
+											// 	return sendErrorEvent(stub,"Error, sending event")
+											// }
 										}
 										}else{
 											return sendErrorEvent(stub,"Error, No DiplomaSupplementMap Found with the given hash " + dsHash )
@@ -696,11 +709,12 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 												return sendErrorEvent(stub,"Error putting assets in state")
 											}
 											//Execution of chaincode finishe successfully
-											tosend := "Tx chaincode finished OK." + stub.GetTxID()
-											err = stub.SetEvent("evtsender", []byte(tosend))
-											if err != nil {
-												return sendErrorEvent(stub,"Error Sending event")
-											}
+											sendSuccessEvent(stub,PublishRequest{},"Tx chaincode finished OK.")
+											// tosend := "Tx chaincode finished OK." + stub.GetTxID()
+											// err = stub.SetEvent("evtsender", []byte(tosend))
+											// if err != nil {
+											// 	return sendErrorEvent(stub,"Error Sending event")
+											// }
 
 										}
 										return nil, nil
@@ -768,11 +782,12 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 
 													}
 													//Execution of chaincode finishe successfully
-													tosend := "Tx chaincode finished OK." + stub.GetTxID()
-													err = stub.SetEvent("evtsender", []byte(tosend))
-													if err != nil {
-														return sendErrorEvent(stub,"Error Sending event")
-													}
+													sendSuccessEvent(stub,PublishRequest{},"Tx chaincode finished OK.")
+													// tosend := "Tx chaincode finished OK." + stub.GetTxID()
+													// err = stub.SetEvent("evtsender", []byte(tosend))
+													// if err != nil {
+													// 	return sendErrorEvent(stub,"Error Sending event")
+													// }
 
 										}else{
 											return sendErrorEvent(stub,"User not allowed to do this action")
@@ -831,19 +846,26 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 											if err != nil{
 												 sendErrorEvent(stub,"could not marshal Publish Request")
 											}
-											// tosendEvnt := string(requestJSON)
-											sendPubRequestEvent(stub, request)
-											err = stub.SetEvent("evtsender", []byte("this is a test event"))
+
 
 											if err != nil {
 												sendErrorEvent(stub,"Could not put assets to state")
 											}
 											//Execution of chaincode finishe successfully
-											tosend := "Tx chaincode finished OK." + stub.GetTxID()
-											err = stub.SetEvent("evtsender", []byte(tosend))
-											if err != nil {
-												return sendErrorEvent(stub,"Could not send success event")
-											}
+											sendSuccessEvent(stub,request,"Tx chaincode finished OK.")
+
+											// tosend := "Tx chaincode finished OK." + stub.GetTxID()
+											// err = stub.SetEvent("evtsender", []byte(tosend))
+											// if err != nil {
+											// 	return sendErrorEvent(stub,"Could not send success event")
+											// }
+											//
+											// tosend2 := "This is a test event." + stub.GetTxID()
+											// err = stub.SetEvent("evtsender", []byte(tosend2))
+											// if err != nil {
+											// 	return sendErrorEvent(stub,"Could not send event")
+											// }
+
 
 										}else{
 											attr, _ := stub.ReadCertAttribute("typeOfUser")
@@ -855,12 +877,14 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 
 
 
-								func sendPubRequestEvent(stub shim.ChaincodeStubInterface, pubRequest PublishRequest)([]byte, error){
-										requestJSON,err := json.Marshal(pubRequest)
+								func sendSuccessEvent(stub shim.ChaincodeStubInterface, pubRequest PublishRequest,
+																																	message string)([]byte, error){
+										event := CustomEvent{Message: message, Body: pubRequest, TxId : stub.GetTxID()}
+										eventJSON,err := json.Marshal(event)
 										if err != nil{
-											 sendErrorEvent(stub,"could not marshal Publish Request")
+											 sendErrorEvent(stub,"could not marshal event")
 										}
-										tosend := string(requestJSON)
+										tosend := string(eventJSON)
 										err = stub.SetEvent("evtsender", []byte(tosend))
 										if err != nil {
 											return nil, err

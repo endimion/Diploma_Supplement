@@ -41,9 +41,13 @@ process.on('exit', function() {
 });
 
 // testDeploy();
-// testRequestSupplementPublication();
+testRequestSupplementPublication();
+// testGetPendingPubRequests();
 
-testGetPendingPubRequests();
+
+
+
+
 
 
 function testDeploy(){

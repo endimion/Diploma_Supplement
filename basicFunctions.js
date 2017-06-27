@@ -248,29 +248,51 @@ function invokeWithParams(userObj,invReq) {
         reject(err);
       });
 
-      //Listen to custom events
+      // //Listen to custom events
+      // var regid = eh.registerChaincodeEvent(invReq.chaincodeID, "evtsender", function(event) {
+      //   console.log(util.format("Custom event received, payload: %j\n", event.payload.toString()));
+      //
+      //   if(event.payload.toString() && event.payload.toString().indexOf("Error") >= 0){
+      //     let uuid = event.payload.toString().split(".")[1];
+      //     eh.unregisterChaincodeEvent(regid);
+      //     if(uuid === txHash){ //resolve promise only when the current transaction has finished
+      //       eh.unregisterChaincodeEvent(regid);
+      //       reject(event.payload.toString());
+      //     }
+      //   }
+      //   if(event.payload.toString()&& event.payload.toString().indexOf("Tx chaincode finished OK") >= 0){
+      //       let uuid = event.payload.toString().split(".")[1];
+      //       console.log("\nUUID " + uuid);
+      //       console.log("\ntxHash " + txHash);
+      //       if(uuid === txHash){ //resolve promise only when the current transaction has finished
+      //         eh.unregisterChaincodeEvent(regid);
+      //         resolve(event.payload.toString());
+      //       }
+      //       networkConfig.chain.setInvokeWaitTime(20);
+      //   }
+      // });
       var regid = eh.registerChaincodeEvent(invReq.chaincodeID, "evtsender", function(event) {
         console.log(util.format("Custom event received, payload: %j\n", event.payload.toString()));
+        let eventJSON = JSON.parse(event.payload.toString());
+        let eventMessage = eventJSON.Message;
+        let eventBODY = eventJSON.Body;
+        let eventTXID = eventJSON.TxId;
 
-        if(event.payload.toString() && event.payload.toString().indexOf("Error") >= 0){
-          let uuid = event.payload.toString().split(".")[1];
-          eh.unregisterChaincodeEvent(regid);
-          if(uuid === txHash){ //resolve promise only when the current transaction has finished
+        if(eventMessage.indexOf("Error") >= 0){
+          if(eventTXID === txHash){ //resolve promise only when the current transaction has finished
             eh.unregisterChaincodeEvent(regid);
-            reject(event.payload.toString());
+            reject(eventMessage);
           }
         }
-        if(event.payload.toString()&& event.payload.toString().indexOf("Tx chaincode finished OK") >= 0){
-            let uuid = event.payload.toString().split(".")[1];
-            console.log("\nUUID " + uuid);
-            console.log("\ntxHash " + txHash);
-            if(uuid === txHash){ //resolve promise only when the current transaction has finished
+        if(eventMessage.indexOf("Tx chaincode finished OK") >= 0){
+            if(eventTXID === txHash){ //resolve promise only when the current transaction has finished
               eh.unregisterChaincodeEvent(regid);
-              resolve(event.payload.toString());
+              resolve(eventMessage);
             }
             networkConfig.chain.setInvokeWaitTime(20);
         }
       });
+
     });
 
 
