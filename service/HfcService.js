@@ -8,6 +8,7 @@ const srvUtils = require('../utils/serverUtils.js');
 const supUtils = require('../utils/SupplementUtils.js');
 const qr = require('qr-image');
 const util = require('util');
+const rand = require('randomstring');
 
 exports.publishSupplement = function(owner, university, _id){
   // console.log(owner + university + _id);
@@ -104,7 +105,7 @@ exports.getSupplementByHash = function(userEid, dsHash,userType){
     return new Promise(function(resolve,reject){
       let _enrollAttr = [{name:'typeOfUser',value:userType},{name:"eID",value:userEid}];
       let enrollUserFnc = basic.enrollAndRegisterUsers;
-      let genCodeargs = [dsHash];
+      let genCodeargs = [dsHash, rand.generate(7)];
       let genCodeInvAttr = ['typeOfUser','eID'];
       let genCodeReq = {
         chaincodeID: basic.config.chaincodeID,

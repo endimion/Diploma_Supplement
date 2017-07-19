@@ -54,7 +54,7 @@ let deployRequest = {
 
 
 
-testDeploy();
+// testDeploy();
 // testGetSupplements();
  // testPublishSupplement()
 // testAddAuthorizedUser()

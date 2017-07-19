@@ -41,11 +41,29 @@ process.on('exit', function() {
 });
 
 // testDeploy();
-testRequestSupplementPublication();
+// testRequestSupplementPublication();
 // testGetPendingPubRequests();
 
 
 
+
+// testDeploy();
+testGetSupplements();
+ // testPublishSupplement()
+
+
+
+
+
+// testAddAuthorizedUser()
+// testInvoke();
+//
+// testGetSupplementById();
+
+// testAddDSMap();
+// testGetDSMap();
+// testAddDSMapReceipient();
+// testGenCodeForDSMap();
 
 
 
@@ -144,6 +162,58 @@ function testDeploy(){
 
 
 
+    function testPublishSupplement(){
+      let _id =  "12345";//Math.floor((Math.random() * 1000) + 1);
+      let _args = ['{"Owner": "testEidHash", "University":"testUniversity","Authorized":[],"Id":"'+_id+'"}' ];
+      let _enrollAttr = [{name:'typeOfUser',value:'University'},{name:"eID",value:"testUniversity"}];
+      let _invAttr = ['typeOfUser','eID'];
+      let req = {
+        // Name (hash) required for invoke
+        chaincodeID:  fs.readFileSync(__dirname + "/chaincodeIDLocalHost", 'utf8'),
+        // Function to trigger
+        fcn: "publish",
+        // Parameters for the invoke function
+        args: _args,
+        //pass explicit attributes to teh query
+        attrs: _invAttr
+      };
+      enrollAndRegisterUsers("testUni4",_enrollAttr)
+      .then(user => {
+        invokeWithParams(user,req).then(res=> {console.log(res);
+          process.exit(0);
+        }).catch(err =>{
+          console.log(err);
+          process.exit(1);
+        });
+      }).catch(err =>{
+        console.log(err);
+      });
+    }
+
+
+
+    function testGetSupplements(){
+      let _args = ["testUniversity"];
+      let attributes = ['typeOfUser','eID'];
+      let enrollAttr = [{name:'typeOfUser',value:'University'},{name:"eID",value:"testUniversity"}];
+
+      let testQ2 = new ChainCodeQuery(attributes, _args,
+          fs.readFileSync(__dirname + "/chaincodeIDLocalHost", 'utf8'),"getSupplements",queryByReqAndAttributes);
+      let testQfunc2 = testQ2.makeQuery.bind(testQ2);
+      enrollAndRegisterUsers("testEidHash",enrollAttr)
+      .then(testQfunc2).then(res =>{
+        console.log("\nthe result is" + res);
+        process.exit(0);
+      })
+      .catch(err =>{
+        console.log("AN ERROR OCCURED!!!");
+        console.log(err);
+        if(err.toString().indexOf("Security handshake") > 0){
+          console.log("there was a handshake error");
+        }
+        process.exit(1);
+      });
+    }
 
 
 
@@ -213,6 +283,10 @@ function testDeploy(){
       }
     });
   }
+
+
+
+
 
 
 

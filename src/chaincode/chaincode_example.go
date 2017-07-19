@@ -432,28 +432,49 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 						}
 						assets := Assets{}
 						json.Unmarshal([]byte(assetBytes), &assets)
-						//apend the received supplement to the assets
-						supplementSlice := assets.Supplements
-						supplementSlice = append(supplementSlice,suplement)
-						assets.Supplements = supplementSlice
 
-						//update the state with the new assets
-						encodedAssets,err  := json.Marshal(assets)
-						if err != nil {
-							return sendErrorEvent(stub, "Could not  marshal assets")
+						found := false
+						index := -1
+						pubRequestsSlice := assets.PublishRequests
+						for indx, request := range pubRequestsSlice{
+							 if (request.EidHash == suplement.Owner) &&
+									(request.University == suplement.University){
+										found = true
+										index = indx
+										break
+							}
 						}
-						err = stub.PutState("assets", []byte(encodedAssets))
-						if err != nil {
-							return sendErrorEvent(stub,"Could not place assets back in the state" )
-						}
-						//Execution of chaincode finished successfully
-						sendSuccessEvent(stub,PublishRequest{},"Tx chaincode finished OK.")
-						// tosend := "Tx chaincode finished OK." + stub.GetTxID()
-						// err = stub.SetEvent("evtsender", []byte(tosend))
-						// if err != nil {
-						// 	return nil, err
-						// }
+						if found {
+							//apend the received supplement to the assets
+							supplementSlice := assets.Supplements
+							supplementSlice = append(supplementSlice,suplement)
+							assets.Supplements = supplementSlice
 
+							//remove the request from the pending requests
+							pubRequestsSlice= removeFromReqSlice(pubRequestsSlice,index)
+							assets.PublishRequests = pubRequestsSlice
+
+							//update the state with the new assets
+							encodedAssets,err  := json.Marshal(assets)
+							if err != nil {
+								return sendErrorEvent(stub, "Could not  marshal assets")
+							}
+							err = stub.PutState("assets", []byte(encodedAssets))
+							if err != nil {
+								return sendErrorEvent(stub,"Could not place assets back in the state" )
+							}
+
+
+							//Execution of chaincode finished successfully
+							sendSuccessEvent(stub,PublishRequest{},"Tx chaincode finished OK.")
+
+						}else{
+							return sendErrorEvent(stub,"No Publication Request Found for" + suplement.Owner + " \n " + suplement.University)
+						}
+
+
+					}else{
+						return sendErrorEvent(stub,"User is not University or is not the Issuer of the Supplement")
 					}
 					return nil, nil
 				}
@@ -569,7 +590,7 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 										authorizedUserEntry  := AuthorizedUser{Email:dsMap.Email, Eid: recepientEid}
 										supToUpdate.Authorized = append(supToUpdate.Authorized,authorizedUserEntry)
 										//delete the old version of the supplement
-										supplementSlice = removeFromSlice(supplementSlice,position)
+										supplementSlice = removeFromSupSlice(supplementSlice,position)
 										//add the new supplement
 										supplementSlice = append(supplementSlice,supToUpdate)
 										assets.Supplements = supplementSlice
@@ -604,11 +625,13 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 							generates a random string and adds it at the field of the DSMap
 							*/
 							func (t *SimpleChaincode) genCodeForDSMap(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
-								if len(args) != 1 {
+								if len(args) != 2 {
 									return sendErrorEvent(stub,"Incorrect number of arguments. Expecting 1")
 								}
 								dsHash := args[0]
-								emailCode := getRandString(5)
+								// emailCode := getRandString(5)
+								emailCode := args[1]
+
 
 								//get the assets from the state
 								assetBytes, err := stub.GetState("assets")
@@ -693,7 +716,7 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 											supToUpdate.Authorized = append(supToUpdate.Authorized,authorizedUserEntry)
 
 											//delete the old version of the supplement
-											supplementSlice = removeFromSlice(supplementSlice,position)
+											supplementSlice = removeFromSupSlice(supplementSlice,position)
 											//add the new supplement
 											supplementSlice = append(supplementSlice,supToUpdate)
 
@@ -765,7 +788,7 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 														}
 													}
 													//delete the old version of the supplement
-													supplementSlice = removeFromSlice(supplementSlice,position)
+													supplementSlice = removeFromSupSlice(supplementSlice,position)
 													//add the new supplement
 													supplementSlice = append(supplementSlice,supToUpdate)
 
@@ -937,7 +960,17 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 									A DiplomaSupplement slice, s
 									The position of the supplement to remove, i
 									**/
-									func removeFromSlice(s []DiplomaSupplement, i int) []DiplomaSupplement {
+									func removeFromSupSlice(s []DiplomaSupplement, i int) []DiplomaSupplement {
+										s[len(s)-1], s[i] = s[i], s[len(s)-1]
+										return s[:len(s)-1]
+									}
+
+
+									/**
+									A DiplomaSupplement slice, s
+									The position of the supplement to remove, i
+									**/
+									func removeFromReqSlice(s []PublishRequest, i int) []PublishRequest {
 										s[len(s)-1], s[i] = s[i], s[len(s)-1]
 										return s[:len(s)-1]
 									}
