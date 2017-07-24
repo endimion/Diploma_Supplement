@@ -78,8 +78,8 @@ function setup() {
   // Set the URL for member services
   networkConfig.chain.setMemberServicesUrl("grpc://172.17.0.1:7054");
   // Add a peer's URL to send the requests to
-  networkConfig.chain.addPeer("grpc://172.17.0.1:9051");
-  networkConfig.chain.eventHubConnect("grpc://172.17.0.1:9053");
+  networkConfig.chain.addPeer("grpc://172.17.0.1:8051");
+  networkConfig.chain.eventHubConnect("grpc://172.17.0.1:8053");
   process.on('exit', function() {
     chain.eventHubDisconnect();
   });
@@ -143,7 +143,7 @@ function enrollAndRegisterUsers(userName,enrollAttr) {
             userObj = user;
             //setting timers for fabric waits
             // chain.setDeployWaitTime(config.deployWaitTime);
-            networkConfig.chain.setDeployWaitTime(400);
+            networkConfig.chain.setDeployWaitTime(600);
             // networkConfig.chain.setInvokeWaitTime(60);
             // console.log("\nDeploying chaincode ...");
 
